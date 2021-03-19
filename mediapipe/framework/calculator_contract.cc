@@ -24,9 +24,9 @@
 
 namespace mediapipe {
 
-absl::Status CalculatorContract::Initialize(
+mediapipe::Status CalculatorContract::Initialize(
     const CalculatorGraphConfig::Node& node) {
-  std::vector<absl::Status> statuses;
+  std::vector<mediapipe::Status> statuses;
 
   auto input_stream_statusor = tool::TagMap::Create(node.input_stream());
   if (!input_stream_statusor.ok()) {
@@ -64,18 +64,19 @@ absl::Status CalculatorContract::Initialize(
   options_.Initialize(*node_config_);
   // Create the PacketTypeSets.
   inputs_ = absl::make_unique<PacketTypeSet>(
-      std::move(input_stream_statusor).value());
+      std::move(input_stream_statusor).ValueOrDie());
   outputs_ = absl::make_unique<PacketTypeSet>(
-      std::move(output_stream_statusor).value());
+      std::move(output_stream_statusor).ValueOrDie());
   input_side_packets_ = absl::make_unique<PacketTypeSet>(
-      std::move(input_side_packet_statusor).value());
+      std::move(input_side_packet_statusor).ValueOrDie());
   output_side_packets_ = absl::make_unique<PacketTypeSet>(
-      std::move(output_side_packet_statusor).value());
-  return absl::OkStatus();
+      std::move(output_side_packet_statusor).ValueOrDie());
+  return mediapipe::OkStatus();
 }
 
-absl::Status CalculatorContract::Initialize(const PacketGeneratorConfig& node) {
-  std::vector<absl::Status> statuses;
+mediapipe::Status CalculatorContract::Initialize(
+    const PacketGeneratorConfig& node) {
+  std::vector<mediapipe::Status> statuses;
 
   auto input_side_packet_statusor =
       tool::TagMap::Create(node.input_side_packet());
@@ -102,14 +103,15 @@ absl::Status CalculatorContract::Initialize(const PacketGeneratorConfig& node) {
   }
 
   input_side_packets_ = absl::make_unique<PacketTypeSet>(
-      std::move(input_side_packet_statusor).value());
+      std::move(input_side_packet_statusor).ValueOrDie());
   output_side_packets_ = absl::make_unique<PacketTypeSet>(
-      std::move(output_side_packet_statusor).value());
-  return absl::OkStatus();
+      std::move(output_side_packet_statusor).ValueOrDie());
+  return mediapipe::OkStatus();
 }
 
-absl::Status CalculatorContract::Initialize(const StatusHandlerConfig& node) {
-  std::vector<absl::Status> statuses;
+mediapipe::Status CalculatorContract::Initialize(
+    const StatusHandlerConfig& node) {
+  std::vector<mediapipe::Status> statuses;
 
   auto input_side_packet_statusor =
       tool::TagMap::Create(node.input_side_packet());
@@ -131,8 +133,8 @@ absl::Status CalculatorContract::Initialize(const StatusHandlerConfig& node) {
   }
 
   input_side_packets_ = absl::make_unique<PacketTypeSet>(
-      std::move(input_side_packet_statusor).value());
-  return absl::OkStatus();
+      std::move(input_side_packet_statusor).ValueOrDie());
+  return mediapipe::OkStatus();
 }
 
 }  // namespace mediapipe

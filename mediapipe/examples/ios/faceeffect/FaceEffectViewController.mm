@@ -18,8 +18,6 @@
 #import "mediapipe/objc/MPPGraph.h"
 #import "mediapipe/objc/MPPLayerRenderer.h"
 
-#include <map>
-#include <string>
 #include <utility>
 
 #include "mediapipe/framework/formats/matrix_data.pb.h"
@@ -29,18 +27,12 @@
 static NSString* const kGraphName = @"face_effect_gpu";
 
 static const char* kInputStream = "input_video";
+static const char* kIsFacepaintEffectSelectedInputStream = "is_facepaint_effect_selected";
 static const char* kOutputStream = "output_video";
 static const char* kMultiFaceGeometryStream = "multi_face_geometry";
 static const char* kVideoQueueLabel = "com.google.mediapipe.example.videoQueue";
-static const char* kSelectedEffectIdInputStream = "selected_effect_id";
-static const char* kUseFaceDetectionInputSourceInputSidePacket = "use_face_detection_input_source";
 
-static const BOOL kUseFaceDetectionInputSource = NO;
 static const int kMatrixTranslationZIndex = 14;
-
-static const int kSelectedEffectIdAxis = 0;
-static const int kSelectedEffectIdFacepaint = 1;
-static const int kSelectedEffectIdGlasses = 2;
 
 @interface FaceEffectViewController () <MPPGraphDelegate, MPPInputSourceDelegate>
 
@@ -53,7 +45,7 @@ static const int kSelectedEffectIdGlasses = 2;
 @implementation FaceEffectViewController {
   /// Handle tap gestures.
   UITapGestureRecognizer* _tapGestureRecognizer;
-  int _selectedEffectId;
+  BOOL _isFacepaintEffectSelected;
 
   /// Handles camera access via AVCaptureSession library.
   MPPCameraInputSource* _cameraSource;
@@ -101,14 +93,8 @@ static const int kSelectedEffectIdGlasses = 2;
   mediapipe::CalculatorGraphConfig config;
   config.ParseFromArray(data.bytes, data.length);
 
-  // Pass the kUseFaceDetectionInputSource flag value as an input side packet into the graph.
-  std::map<std::string, mediapipe::Packet> side_packets;
-  side_packets[kUseFaceDetectionInputSourceInputSidePacket] =
-      mediapipe::MakePacket<bool>(kUseFaceDetectionInputSource);
-
   // Create MediaPipe graph with mediapipe::CalculatorGraphConfig proto object.
   MPPGraph* newGraph = [[MPPGraph alloc] initWithGraphConfig:config];
-  [newGraph addSidePackets:side_packets];
   [newGraph addFrameOutputStream:kOutputStream outputPacketType:MPPPacketTypePixelBuffer];
   [newGraph addFrameOutputStream:kMultiFaceGeometryStream outputPacketType:MPPPacketTypeRaw];
   return newGraph;
@@ -124,13 +110,8 @@ static const int kSelectedEffectIdGlasses = 2;
                                                                   action:@selector(handleTap)];
   [self.view addGestureRecognizer:_tapGestureRecognizer];
 
-  // By default, render the axis effect for the face detection input source and the glasses effect
-  // for the face landmark input source.
-  if (kUseFaceDetectionInputSource) {
-    _selectedEffectId = kSelectedEffectIdAxis;
-  } else {
-    _selectedEffectId = kSelectedEffectIdGlasses;
-  }
+  // By default, render the glasses effect.
+  _isFacepaintEffectSelected = NO;
 
   _renderer = [[MPPLayerRenderer alloc] init];
   _renderer.layer.frame = _liveView.layer.bounds;
@@ -194,28 +175,7 @@ static const int kSelectedEffectIdGlasses = 2;
 // multiple pre-bundled face effects without a need to recompile the app.
 - (void)handleTap {
   dispatch_async(_videoQueue, ^{
-    // Avoid switching the Axis effect for the face detection input source.
-    if (kUseFaceDetectionInputSource) {
-      return;
-    }
-
-    // Looped effect order: glasses -> facepaint -> axis -> glasses -> ...
-    switch (_selectedEffectId) {
-      case kSelectedEffectIdAxis: {
-        _selectedEffectId = kSelectedEffectIdGlasses;
-        break;
-      }
-
-      case kSelectedEffectIdFacepaint: {
-        _selectedEffectId = kSelectedEffectIdAxis;
-        break;
-      }
-
-      case kSelectedEffectIdGlasses: {
-        _selectedEffectId = kSelectedEffectIdFacepaint;
-        break;
-      }
-    }
+    _isFacepaintEffectSelected = !_isFacepaintEffectSelected;
   });
 }
 
@@ -229,7 +189,7 @@ static const int kSelectedEffectIdGlasses = 2;
     // Display the captured image on the screen.
     CVPixelBufferRetain(pixelBuffer);
     dispatch_async(dispatch_get_main_queue(), ^{
-      _effectSwitchingHintLabel.hidden = kUseFaceDetectionInputSource;
+      _effectSwitchingHintLabel.hidden = NO;
       [_renderer renderPixelBuffer:pixelBuffer];
       CVPixelBufferRelease(pixelBuffer);
     });
@@ -276,18 +236,18 @@ static const int kSelectedEffectIdGlasses = 2;
   mediapipe::Timestamp graphTimestamp(static_cast<mediapipe::TimestampBaseType>(
       mediapipe::Timestamp::kTimestampUnitsPerSecond * CMTimeGetSeconds(timestamp)));
 
-  mediapipe::Packet selectedEffectIdPacket =
-      mediapipe::MakePacket<int>(_selectedEffectId).At(graphTimestamp);
+  mediapipe::Packet isFacepaintEffectSelectedPacket =
+      mediapipe::MakePacket<bool>(_isFacepaintEffectSelected).At(graphTimestamp);
 
   [self.graph sendPixelBuffer:imageBuffer
                    intoStream:kInputStream
                    packetType:MPPPacketTypePixelBuffer
                     timestamp:graphTimestamp];
 
-  // Alongside the input camera frame, we also send the `selected_effect_id` int packet to indicate
-  // which effect should be rendered on this frame.
-  [self.graph movePacket:std::move(selectedEffectIdPacket)
-              intoStream:kSelectedEffectIdInputStream
+  // Alongside the input camera frame, we also send the `is_facepaint_effect_selected` boolean
+  // packet to indicate which effect should be rendered on this frame.
+  [self.graph movePacket:std::move(isFacepaintEffectSelectedPacket)
+              intoStream:kIsFacepaintEffectSelectedInputStream
                    error:nil];
 }
 

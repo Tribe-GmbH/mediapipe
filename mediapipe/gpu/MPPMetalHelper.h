@@ -41,7 +41,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// Configures a calculator's contract for accessing GPU resources.
 /// Calculators should use this in GetContract.
-+ (absl::Status)updateContract:(mediapipe::CalculatorContract*)cc;
++ (::mediapipe::Status)updateContract:(mediapipe::CalculatorContract*)cc;
 
 /// Deprecated initializer.
 - (instancetype)initWithSidePackets:(const mediapipe::PacketSet&)inputSidePackets;
@@ -51,7 +51,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// Configures a calculator's side packets for accessing GPU resources.
 /// Calculators should use this in FillExpectations.
-+ (absl::Status)setupInputSidePackets:(mediapipe::PacketTypeSet*)inputSidePackets;
++ (::mediapipe::Status)setupInputSidePackets:(mediapipe::PacketTypeSet*)inputSidePackets;
 
 /// Get a metal command buffer.
 /// Calculators should use this method instead of getting a buffer from the

@@ -19,52 +19,54 @@
 namespace mediapipe {
 
 TEST(StatusBuilder, AnnotateMode) {
-  absl::Status status = StatusBuilder(absl::Status(absl::StatusCode::kNotFound,
-                                                   "original message"),
-                                      MEDIAPIPE_LOC)
-                        << "annotated message1 "
-                        << "annotated message2";
+  mediapipe::Status status =
+      StatusBuilder(mediapipe::Status(mediapipe::StatusCode::kNotFound,
+                                      "original message"),
+                    MEDIAPIPE_LOC)
+      << "annotated message1 "
+      << "annotated message2";
   ASSERT_FALSE(status.ok());
-  EXPECT_EQ(status.code(), absl::StatusCode::kNotFound);
+  EXPECT_EQ(status.code(), mediapipe::StatusCode::kNotFound);
   EXPECT_EQ(status.message(),
             "original message; annotated message1 annotated message2");
 }
 
 TEST(StatusBuilder, PrependMode) {
-  absl::Status status =
-      StatusBuilder(
-          absl::Status(absl::StatusCode::kInvalidArgument, "original message"),
-          MEDIAPIPE_LOC)
+  mediapipe::Status status =
+      StatusBuilder(mediapipe::Status(mediapipe::StatusCode::kInvalidArgument,
+                                      "original message"),
+                    MEDIAPIPE_LOC)
           .SetPrepend()
       << "prepended message1 "
       << "prepended message2 ";
   ASSERT_FALSE(status.ok());
-  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.code(), mediapipe::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.message(),
             "prepended message1 prepended message2 original message");
 }
 
 TEST(StatusBuilder, AppendMode) {
-  absl::Status status = StatusBuilder(absl::Status(absl::StatusCode::kInternal,
-                                                   "original message"),
-                                      MEDIAPIPE_LOC)
-                            .SetAppend()
-                        << " extra message1"
-                        << " extra message2";
+  mediapipe::Status status =
+      StatusBuilder(mediapipe::Status(mediapipe::StatusCode::kInternal,
+                                      "original message"),
+                    MEDIAPIPE_LOC)
+          .SetAppend()
+      << " extra message1"
+      << " extra message2";
   ASSERT_FALSE(status.ok());
-  EXPECT_EQ(status.code(), absl::StatusCode::kInternal);
+  EXPECT_EQ(status.code(), mediapipe::StatusCode::kInternal);
   EXPECT_EQ(status.message(), "original message extra message1 extra message2");
 }
 
 TEST(StatusBuilder, NoLoggingMode) {
-  absl::Status status =
-      StatusBuilder(
-          absl::Status(absl::StatusCode::kUnavailable, "original message"),
-          MEDIAPIPE_LOC)
+  mediapipe::Status status =
+      StatusBuilder(mediapipe::Status(mediapipe::StatusCode::kUnavailable,
+                                      "original message"),
+                    MEDIAPIPE_LOC)
           .SetNoLogging()
       << " extra message";
   ASSERT_FALSE(status.ok());
-  EXPECT_EQ(status.code(), absl::StatusCode::kUnavailable);
+  EXPECT_EQ(status.code(), mediapipe::StatusCode::kUnavailable);
   EXPECT_EQ(status.message(), "original message");
 }
 

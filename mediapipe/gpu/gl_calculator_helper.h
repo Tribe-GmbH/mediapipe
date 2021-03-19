@@ -18,7 +18,6 @@
 #include "absl/memory/memory.h"
 #include "mediapipe/framework/calculator_context.h"
 #include "mediapipe/framework/calculator_contract.h"
-#include "mediapipe/framework/formats/image.h"
 #include "mediapipe/framework/formats/image_frame.h"
 #include "mediapipe/framework/packet.h"
 #include "mediapipe/framework/packet_set.h"
@@ -69,7 +68,7 @@ class GlCalculatorHelper {
   ~GlCalculatorHelper();
 
   // Call Open from the Open method of a calculator to initialize the helper.
-  absl::Status Open(CalculatorContext* cc);
+  ::mediapipe::Status Open(CalculatorContext* cc);
 
   // Can be used to initialize the helper outside of a calculator. Useful for
   // testing.
@@ -78,31 +77,33 @@ class GlCalculatorHelper {
 
   // This method can be called from GetContract to set up the needed GPU
   // resources.
-  static absl::Status UpdateContract(CalculatorContract* cc);
+  static ::mediapipe::Status UpdateContract(CalculatorContract* cc);
 
   // This method can be called from FillExpectations to set the correct types
   // for the shared GL input side packet(s).
-  static absl::Status SetupInputSidePackets(PacketTypeSet* input_side_packets);
+  static ::mediapipe::Status SetupInputSidePackets(
+      PacketTypeSet* input_side_packets);
 
   // Execute the provided function within the helper's GL context. On some
   // platforms, this may be run on a different thread; however, this method
   // will still wait for the function to finish executing before returning.
   // The status result from the function is passed on to the caller.
-  absl::Status RunInGlContext(std::function<absl::Status(void)> gl_func);
+  ::mediapipe::Status RunInGlContext(
+      std::function<::mediapipe::Status(void)> gl_func);
 
   // Convenience version of RunInGlContext for arguments with a void result
-  // type. As with the absl::Status version, this also waits for the
+  // type. As with the ::mediapipe::Status version, this also waits for the
   // function to finish executing before returning.
   //
   // Implementation note: we cannot use a std::function<void(void)> argument
   // here, because that would break passing in a lambda that returns a status;
   // e.g.:
-  //   RunInGlContext([]() -> absl::Status { ... });
+  //   RunInGlContext([]() -> ::mediapipe::Status { ... });
   //
   // The reason is that std::function<void(...)> allows the implicit conversion
   // of a callable with any result type, as long as the argument types match.
   // As a result, the above lambda would be implicitly convertible to both
-  // std::function<absl::Status(void)> and std::function<void(void)>, and
+  // std::function<::mediapipe::Status(void)> and std::function<void(void)>, and
   // the invocation would be ambiguous.
   //
   // Therefore, instead of using std::function<void(void)>, we use a template
@@ -112,7 +113,7 @@ class GlCalculatorHelper {
   void RunInGlContext(T f) {
     RunInGlContext([f] {
       f();
-      return absl::OkStatus();
+      return ::mediapipe::OkStatus();
     }).IgnoreError();
   }
 
@@ -124,7 +125,6 @@ class GlCalculatorHelper {
   // Creates a texture representing an input frame, and manages sync token.
   GlTexture CreateSourceTexture(const GpuBuffer& pixel_buffer);
   GlTexture CreateSourceTexture(const ImageFrame& image_frame);
-  GlTexture CreateSourceTexture(const mediapipe::Image& image);
 
 #ifdef __APPLE__
   // Creates a texture from a plane of a planar buffer.
@@ -152,8 +152,6 @@ class GlCalculatorHelper {
   void BindFramebuffer(const GlTexture& dst);
 
   GlContext& GetGlContext() const;
-
-  GlVersion GetGlVersion() const;
 
   // Check if the calculator helper has been previously initialized.
   bool Initialized() { return impl_ != nullptr; }

@@ -28,17 +28,17 @@ namespace test_ns {
 
 class TestSinkCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc) {
+  static mediapipe::Status GetContract(CalculatorContract* cc) {
     cc->Inputs().Tag("IN").Set<mediapipe::InputOnlyProto>();
     cc->Outputs().Tag("OUT").Set<int>();
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Process(CalculatorContext* cc) override {
+  mediapipe::Status Process(CalculatorContext* cc) override {
     int x = cc->Inputs().Tag("IN").Get<mediapipe::InputOnlyProto>().x();
     cc->Outputs().Tag("OUT").AddPacket(
         MakePacket<int>(x).At(cc->InputTimestamp()));
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 };
 REGISTER_CALCULATOR(TestSinkCalculator);

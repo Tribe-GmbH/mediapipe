@@ -14,7 +14,6 @@
 
 #include "mediapipe/gpu/gl_calculator_helper.h"
 
-#include "mediapipe/framework/formats/image.h"
 #include "mediapipe/framework/formats/image_frame.h"
 #include "mediapipe/framework/legacy_calculator_support.h"
 #include "mediapipe/framework/port/canonical_errors.h"
@@ -40,12 +39,12 @@ GlCalculatorHelper::GlCalculatorHelper() {}
 
 GlCalculatorHelper::~GlCalculatorHelper() {}
 
-absl::Status GlCalculatorHelper::Open(CalculatorContext* cc) {
+::mediapipe::Status GlCalculatorHelper::Open(CalculatorContext* cc) {
   CHECK(cc);
   // TODO return error from impl_ (needs two-stage init)
   impl_ = absl::make_unique<GlCalculatorHelperImpl>(
       cc, &cc->Service(kGpuService).GetObject());
-  return absl::OkStatus();
+  return ::mediapipe::OkStatus();
 }
 
 void GlCalculatorHelper::InitializeForTest(GpuSharedData* gpu_shared) {
@@ -58,7 +57,7 @@ void GlCalculatorHelper::InitializeForTest(GpuResources* gpu_resources) {
 }
 
 // static
-absl::Status GlCalculatorHelper::UpdateContract(CalculatorContract* cc) {
+::mediapipe::Status GlCalculatorHelper::UpdateContract(CalculatorContract* cc) {
   cc->UseService(kGpuService);
   // Allow the legacy side packet to be provided, too, for backwards
   // compatibility with existing graphs. It will just be ignored.
@@ -67,11 +66,11 @@ absl::Status GlCalculatorHelper::UpdateContract(CalculatorContract* cc) {
   if (id.IsValid()) {
     input_side_packets.Get(id).Set<GpuSharedData*>();
   }
-  return absl::OkStatus();
+  return ::mediapipe::OkStatus();
 }
 
 // static
-absl::Status GlCalculatorHelper::SetupInputSidePackets(
+::mediapipe::Status GlCalculatorHelper::SetupInputSidePackets(
     PacketTypeSet* input_side_packets) {
   auto cc = LegacyCalculatorSupport::Scoped<CalculatorContract>::current();
   if (cc) {
@@ -88,12 +87,12 @@ absl::Status GlCalculatorHelper::SetupInputSidePackets(
   RET_CHECK(id.IsValid()) << "A " << mediapipe::kGpuSharedTagName
                           << " input side packet is required here.";
   input_side_packets->Get(id).Set<GpuSharedData*>();
-  return absl::OkStatus();
+  return ::mediapipe::OkStatus();
 }
 
-absl::Status GlCalculatorHelper::RunInGlContext(
-    std::function<absl::Status(void)> gl_func) {
-  if (!impl_) return absl::InternalError("helper not initialized");
+::mediapipe::Status GlCalculatorHelper::RunInGlContext(
+    std::function<::mediapipe::Status(void)> gl_func) {
+  if (!impl_) return ::mediapipe::InternalError("helper not initialized");
   // TODO: Remove LegacyCalculatorSupport from MediaPipe OSS.
   auto calculator_context =
       LegacyCalculatorSupport::Scoped<CalculatorContext>::current();
@@ -139,23 +138,6 @@ GlTexture GlCalculatorHelper::CreateDestinationTexture(int output_width,
 
 GlContext& GlCalculatorHelper::GetGlContext() const {
   return impl_->GetGlContext();
-}
-
-GlVersion GlCalculatorHelper::GetGlVersion() const {
-  return impl_->GetGlVersion();
-}
-
-GlTexture GlCalculatorHelper::CreateSourceTexture(
-    const mediapipe::Image& image) {
-  return impl_->CreateSourceTexture(image.GetGpuBuffer());
-}
-
-template <>
-std::unique_ptr<mediapipe::Image> GlTexture::GetFrame<mediapipe::Image>()
-    const {
-  std::unique_ptr<GpuBuffer> buf = GetFrame<GpuBuffer>();
-  auto output = absl::make_unique<mediapipe::Image>(*buf);
-  return output;
 }
 
 }  // namespace mediapipe

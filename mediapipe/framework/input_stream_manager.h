@@ -57,8 +57,8 @@ class InputStreamManager {
   InputStreamManager() = default;
 
   // Initializes the InputStreamManager.
-  absl::Status Initialize(const std::string& name,
-                          const PacketType* packet_type, bool back_edge);
+  mediapipe::Status Initialize(const std::string& name,
+                               const PacketType* packet_type, bool back_edge);
 
   // Returns the stream name.
   const std::string& Name() const;
@@ -67,7 +67,7 @@ class InputStreamManager {
   bool BackEdge() const { return back_edge_; }
 
   // Sets the header Packet.
-  absl::Status SetHeader(const Packet& header);
+  mediapipe::Status SetHeader(const Packet& header);
 
   const Packet& Header() const { return header_; }
 
@@ -87,12 +87,13 @@ class InputStreamManager {
   //   Timestamp::PostStream(), the packet must be the only packet in the
   //   stream.
   // Violation of any of these conditions causes an error status.
-  absl::Status AddPackets(const std::list<Packet>& container, bool* notify);
+  mediapipe::Status AddPackets(const std::list<Packet>& container,
+                               bool* notify);
 
   // Move a list of timestamped packets. Sets "notify" to true if the queue
   // becomes non-empty. Does nothing if the input stream is closed. After the
   // move, all packets in the container must be empty.
-  absl::Status MovePackets(std::list<Packet>* container, bool* notify);
+  mediapipe::Status MovePackets(std::list<Packet>* container, bool* notify);
 
   // Closes the input stream.  This function can be called multiple times.
   void Close() ABSL_LOCKS_EXCLUDED(stream_mutex_);
@@ -102,7 +103,7 @@ class InputStreamManager {
   // empty. Returns an error status if this decreases the bound, unless
   // DisableTimestamps() is called. Does nothing if the input stream is
   // closed.
-  absl::Status SetNextTimestampBound(Timestamp bound, bool* notify)
+  mediapipe::Status SetNextTimestampBound(Timestamp bound, bool* notify)
       ABSL_LOCKS_EXCLUDED(stream_mutex_);
 
   // Returns the smallest timestamp at which we might see an input in
@@ -181,7 +182,7 @@ class InputStreamManager {
   // Otherwise, the caller must be MovePackets() and Container should be
   // non-const reference.
   template <typename Container>
-  absl::Status AddOrMovePacketsInternal(Container container, bool* notify)
+  mediapipe::Status AddOrMovePacketsInternal(Container container, bool* notify)
       ABSL_LOCKS_EXCLUDED(stream_mutex_);
 
   // Returns true if the next timestamp bound reaches Timestamp::Done().

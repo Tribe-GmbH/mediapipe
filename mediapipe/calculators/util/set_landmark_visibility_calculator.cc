@@ -50,33 +50,34 @@ constexpr char kVisibilityTag[] = "VISIBILITY";
 //
 class SetLandmarkVisibilityCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc);
-  absl::Status Open(CalculatorContext* cc) override;
-  absl::Status Process(CalculatorContext* cc) override;
+  static mediapipe::Status GetContract(CalculatorContract* cc);
+  mediapipe::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
 };
 REGISTER_CALCULATOR(SetLandmarkVisibilityCalculator);
 
-absl::Status SetLandmarkVisibilityCalculator::GetContract(
+mediapipe::Status SetLandmarkVisibilityCalculator::GetContract(
     CalculatorContract* cc) {
   cc->Inputs().Tag(kNormalizedLandmarksTag).Set<NormalizedLandmarkList>();
   cc->Inputs().Tag(kVisibilityTag).Set<float>();
   cc->Outputs().Tag(kNormalizedLandmarksTag).Set<NormalizedLandmarkList>();
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status SetLandmarkVisibilityCalculator::Open(CalculatorContext* cc) {
+mediapipe::Status SetLandmarkVisibilityCalculator::Open(CalculatorContext* cc) {
   cc->SetOffset(TimestampDiff(0));
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status SetLandmarkVisibilityCalculator::Process(CalculatorContext* cc) {
+mediapipe::Status SetLandmarkVisibilityCalculator::Process(
+    CalculatorContext* cc) {
   // Check that landmark and visibility are not empty.
   // Don't emit an empty packet for this timestamp.
   if (cc->Inputs().Tag(kNormalizedLandmarksTag).IsEmpty() ||
       cc->Inputs().Tag(kVisibilityTag).IsEmpty()) {
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
   const auto& in_landmarks =
@@ -96,7 +97,7 @@ absl::Status SetLandmarkVisibilityCalculator::Process(CalculatorContext* cc) {
       .Tag(kNormalizedLandmarksTag)
       .Add(out_landmarks.release(), cc->InputTimestamp());
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 }  // namespace mediapipe

@@ -19,7 +19,6 @@
 #include <string>
 
 #include "mediapipe/framework/deps/file_path.h"
-#include "mediapipe/framework/port/commandlineflags.h"
 #include "mediapipe/framework/port/file_helpers.h"
 #include "mediapipe/framework/port/gtest.h"
 #include "mediapipe/framework/port/integral_types.h"

@@ -128,7 +128,7 @@ Status OutputStreamShard::AddPacketInternal(T&& packet) {
 
   // TODO debug log?
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 void OutputStreamShard::AddPacket(const Packet& packet) {

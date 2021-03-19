@@ -6,9 +6,9 @@
 #include "mediapipe/calculators/image/image_cropping_calculator.pb.h"
 #include "mediapipe/framework/calculator_framework.h"
 
-#if !MEDIAPIPE_DISABLE_GPU
+#if !defined(MEDIAPIPE_DISABLE_GPU)
 #include "mediapipe/gpu/gl_calculator_helper.h"
-#endif  // !MEDIAPIPE_DISABLE_GPU
+#endif  //  !MEDIAPIPE_DISABLE_GPU
 
 // Crops the input texture to the given rectangle region. The rectangle can
 // be at arbitrary location on the image with rotation. If there's rotation, the
@@ -58,23 +58,24 @@ class ImageCroppingCalculator : public CalculatorBase {
   ImageCroppingCalculator() = default;
   ~ImageCroppingCalculator() override = default;
 
-  static absl::Status GetContract(CalculatorContract* cc);
-  absl::Status Open(CalculatorContext* cc) override;
-  absl::Status Process(CalculatorContext* cc) override;
-  absl::Status Close(CalculatorContext* cc) override;
+  static mediapipe::Status GetContract(CalculatorContract* cc);
+  mediapipe::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
+  mediapipe::Status Close(CalculatorContext* cc) override;
   static RectSpec GetCropSpecs(const CalculatorContext* cc, int src_width,
                                int src_height);
 
  private:
-  absl::Status ValidateBorderModeForCPU(CalculatorContext* cc);
-  absl::Status ValidateBorderModeForGPU(CalculatorContext* cc);
-  absl::Status RenderCpu(CalculatorContext* cc);
-  absl::Status RenderGpu(CalculatorContext* cc);
-  absl::Status InitGpu(CalculatorContext* cc);
+  mediapipe::Status ValidateBorderModeForCPU(CalculatorContext* cc);
+  mediapipe::Status ValidateBorderModeForGPU(CalculatorContext* cc);
+  mediapipe::Status RenderCpu(CalculatorContext* cc);
+  mediapipe::Status RenderGpu(CalculatorContext* cc);
+  mediapipe::Status InitGpu(CalculatorContext* cc);
   void GlRender();
   void GetOutputDimensions(CalculatorContext* cc, int src_width, int src_height,
                            int* dst_width, int* dst_height);
-  absl::Status GetBorderModeForOpenCV(CalculatorContext* cc, int* border_mode);
+  mediapipe::Status GetBorderModeForOpenCV(CalculatorContext* cc,
+                                           int* border_mode);
 
   mediapipe::ImageCroppingCalculatorOptions options_;
 
@@ -83,11 +84,11 @@ class ImageCroppingCalculator : public CalculatorBase {
   float transformed_points_[8];
   float output_max_width_ = FLT_MAX;
   float output_max_height_ = FLT_MAX;
-#if !MEDIAPIPE_DISABLE_GPU
+#if !defined(MEDIAPIPE_DISABLE_GPU)
   bool gpu_initialized_ = false;
   mediapipe::GlCalculatorHelper gpu_helper_;
   GLuint program_ = 0;
-#endif  // !MEDIAPIPE_DISABLE_GPU
+#endif  //  !MEDIAPIPE_DISABLE_GPU
 };
 
 }  // namespace mediapipe

@@ -29,31 +29,23 @@ import com.google.mediapipe.framework.Packet;
 import com.google.mediapipe.framework.PacketGetter;
 import com.google.mediapipe.modules.facegeometry.FaceGeometryProto.FaceGeometry;
 import com.google.mediapipe.formats.proto.MatrixDataProto.MatrixData;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /** Main activity of MediaPipe face mesh app. */
 public class MainActivity extends com.google.mediapipe.apps.basic.MainActivity {
   private static final String TAG = "MainActivity";
 
-  // Side packet / stream names.
-  private static final String USE_FACE_DETECTION_INPUT_SOURCE_INPUT_SIDE_PACKET_NAME =
-      "use_face_detection_input_source";
-  private static final String SELECTED_EFFECT_ID_INPUT_STREAM_NAME = "selected_effect_id";
+  // Stream names.
+  private static final String IS_FACEPAINT_EFFECT_SELECTED_INPUT_STREAM_NAME =
+      "is_facepaint_effect_selected";
   private static final String OUTPUT_FACE_GEOMETRY_STREAM_NAME = "multi_face_geometry";
 
   private static final String EFFECT_SWITCHING_HINT_TEXT = "Tap to switch between effects!";
 
-  private static final boolean USE_FACE_DETECTION_INPUT_SOURCE = false;
   private static final int MATRIX_TRANSLATION_Z_INDEX = 14;
 
-  private static final int SELECTED_EFFECT_ID_AXIS = 0;
-  private static final int SELECTED_EFFECT_ID_FACEPAINT = 1;
-  private static final int SELECTED_EFFECT_ID_GLASSES = 2;
-
-  private final Object effectSelectionLock = new Object();
-  private int selectedEffectId;
+  private final Object isFacepaintEffectSelectedLock = new Object();
+  private boolean isFacepaintEffectSelected;
 
   private View effectSwitchingHintView;
   private GestureDetector tapGestureDetector;
@@ -68,20 +60,8 @@ public class MainActivity extends com.google.mediapipe.apps.basic.MainActivity {
     ViewGroup viewGroup = findViewById(R.id.preview_display_layout);
     viewGroup.addView(effectSwitchingHintView);
 
-    // By default, render the axis effect for the face detection input source and the glasses effect
-    // for the face landmark input source.
-    if (USE_FACE_DETECTION_INPUT_SOURCE) {
-      selectedEffectId = SELECTED_EFFECT_ID_AXIS;
-    } else {
-      selectedEffectId = SELECTED_EFFECT_ID_GLASSES;
-    }
-
-    // Pass the USE_FACE_DETECTION_INPUT_SOURCE flag value as an input side packet into the graph.
-    Map<String, Packet> inputSidePackets = new HashMap<>();
-    inputSidePackets.put(
-        USE_FACE_DETECTION_INPUT_SOURCE_INPUT_SIDE_PACKET_NAME,
-        processor.getPacketCreator().createBool(USE_FACE_DETECTION_INPUT_SOURCE));
-    processor.setInputSidePackets(inputSidePackets);
+    // By default, render the glasses effect.
+    isFacepaintEffectSelected = false;
 
     // This callback demonstrates how the output face geometry packet can be obtained and used
     // in an Android app. As an example, the Z-translation component of the face pose transform
@@ -91,9 +71,12 @@ public class MainActivity extends com.google.mediapipe.apps.basic.MainActivity {
         OUTPUT_FACE_GEOMETRY_STREAM_NAME,
         (packet) -> {
           effectSwitchingHintView.post(
-              () ->
-                  effectSwitchingHintView.setVisibility(
-                      USE_FACE_DETECTION_INPUT_SOURCE ? View.INVISIBLE : View.VISIBLE));
+              new Runnable() {
+                @Override
+                public void run() {
+                  effectSwitchingHintView.setVisibility(View.VISIBLE);
+                }
+              });
 
           Log.d(TAG, "Received a multi face geometry packet.");
           List<FaceGeometry> multiFaceGeometry =
@@ -120,26 +103,30 @@ public class MainActivity extends com.google.mediapipe.apps.basic.MainActivity {
                   + "]");
         });
 
-    // Alongside the input camera frame, we also send the `selected_effect_id` int32 packet to
-    // indicate which effect should be rendered on this frame.
+    // Alongside the input camera frame, we also send the `is_facepaint_effect_selected` boolean
+    // packet to indicate which effect should be rendered on this frame.
     processor.setOnWillAddFrameListener(
         (timestamp) -> {
-          Packet selectedEffectIdPacket = null;
+          Packet isFacepaintEffectSelectedPacket = null;
           try {
-            synchronized (effectSelectionLock) {
-              selectedEffectIdPacket = processor.getPacketCreator().createInt32(selectedEffectId);
+            synchronized (isFacepaintEffectSelectedLock) {
+              isFacepaintEffectSelectedPacket =
+                  processor.getPacketCreator().createBool(isFacepaintEffectSelected);
             }
 
             processor
                 .getGraph()
                 .addPacketToInputStream(
-                    SELECTED_EFFECT_ID_INPUT_STREAM_NAME, selectedEffectIdPacket, timestamp);
+                    IS_FACEPAINT_EFFECT_SELECTED_INPUT_STREAM_NAME,
+                    isFacepaintEffectSelectedPacket,
+                    timestamp);
           } catch (RuntimeException e) {
             Log.e(
-                TAG, "Exception while adding packet to input stream while switching effects: " + e);
+                TAG,
+                "Exception while adding packet to input stream while switching effects: " + e);
           } finally {
-            if (selectedEffectIdPacket != null) {
-              selectedEffectIdPacket.release();
+            if (isFacepaintEffectSelectedPacket != null) {
+              isFacepaintEffectSelectedPacket.release();
             }
           }
         });
@@ -162,35 +149,8 @@ public class MainActivity extends com.google.mediapipe.apps.basic.MainActivity {
               }
 
               private void switchEffect() {
-                // Avoid switching the Axis effect for the face detection input source.
-                if (USE_FACE_DETECTION_INPUT_SOURCE) {
-                  return;
-                }
-
-                // Looped effect order: glasses -> facepaint -> axis -> glasses -> ...
-                synchronized (effectSelectionLock) {
-                  switch (selectedEffectId) {
-                    case SELECTED_EFFECT_ID_AXIS:
-                      {
-                        selectedEffectId = SELECTED_EFFECT_ID_GLASSES;
-                        break;
-                      }
-
-                    case SELECTED_EFFECT_ID_FACEPAINT:
-                      {
-                        selectedEffectId = SELECTED_EFFECT_ID_AXIS;
-                        break;
-                      }
-
-                    case SELECTED_EFFECT_ID_GLASSES:
-                      {
-                        selectedEffectId = SELECTED_EFFECT_ID_FACEPAINT;
-                        break;
-                      }
-
-                    default:
-                      break;
-                  }
+                synchronized (isFacepaintEffectSelectedLock) {
+                  isFacepaintEffectSelected = !isFacepaintEffectSelected;
                 }
               }
             });

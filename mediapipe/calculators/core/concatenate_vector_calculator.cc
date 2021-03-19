@@ -25,7 +25,7 @@
 
 #if !defined(MEDIAPIPE_DISABLE_GL_COMPUTE)
 #include "tensorflow/lite/delegates/gpu/gl/gl_buffer.h"
-#endif  // !defined(MEDIAPIPE_DISABLE_GL_COMPUTE)
+#endif  //  !MEDIAPIPE_DISABLE_GPU
 
 namespace mediapipe {
 
@@ -37,7 +37,7 @@ namespace mediapipe {
 //   output_stream: "concatenated_float_vector"
 // }
 typedef ConcatenateVectorCalculator<float> ConcatenateFloatVectorCalculator;
-MEDIAPIPE_REGISTER_NODE(ConcatenateFloatVectorCalculator);
+REGISTER_CALCULATOR(ConcatenateFloatVectorCalculator);
 
 // Example config:
 // node {
@@ -47,13 +47,13 @@ MEDIAPIPE_REGISTER_NODE(ConcatenateFloatVectorCalculator);
 //   output_stream: "concatenated_int32_vector"
 // }
 typedef ConcatenateVectorCalculator<int32> ConcatenateInt32VectorCalculator;
-MEDIAPIPE_REGISTER_NODE(ConcatenateInt32VectorCalculator);
+REGISTER_CALCULATOR(ConcatenateInt32VectorCalculator);
 
 typedef ConcatenateVectorCalculator<uint64> ConcatenateUInt64VectorCalculator;
-MEDIAPIPE_REGISTER_NODE(ConcatenateUInt64VectorCalculator);
+REGISTER_CALCULATOR(ConcatenateUInt64VectorCalculator);
 
 typedef ConcatenateVectorCalculator<bool> ConcatenateBoolVectorCalculator;
-MEDIAPIPE_REGISTER_NODE(ConcatenateBoolVectorCalculator);
+REGISTER_CALCULATOR(ConcatenateBoolVectorCalculator);
 
 // Example config:
 // node {
@@ -64,31 +64,31 @@ MEDIAPIPE_REGISTER_NODE(ConcatenateBoolVectorCalculator);
 // }
 typedef ConcatenateVectorCalculator<TfLiteTensor>
     ConcatenateTfLiteTensorVectorCalculator;
-MEDIAPIPE_REGISTER_NODE(ConcatenateTfLiteTensorVectorCalculator);
+REGISTER_CALCULATOR(ConcatenateTfLiteTensorVectorCalculator);
 
 typedef ConcatenateVectorCalculator<Tensor> ConcatenateTensorVectorCalculator;
-MEDIAPIPE_REGISTER_NODE(ConcatenateTensorVectorCalculator);
+REGISTER_CALCULATOR(ConcatenateTensorVectorCalculator);
 
 typedef ConcatenateVectorCalculator<::mediapipe::NormalizedLandmark>
     ConcatenateLandmarkVectorCalculator;
-MEDIAPIPE_REGISTER_NODE(ConcatenateLandmarkVectorCalculator);
+REGISTER_CALCULATOR(ConcatenateLandmarkVectorCalculator);
 
 typedef ConcatenateVectorCalculator<::mediapipe::NormalizedLandmarkList>
     ConcatenateLandmarListVectorCalculator;
-MEDIAPIPE_REGISTER_NODE(ConcatenateLandmarListVectorCalculator);
+REGISTER_CALCULATOR(ConcatenateLandmarListVectorCalculator);
 
 typedef ConcatenateVectorCalculator<mediapipe::ClassificationList>
     ConcatenateClassificationListVectorCalculator;
-MEDIAPIPE_REGISTER_NODE(ConcatenateClassificationListVectorCalculator);
+REGISTER_CALCULATOR(ConcatenateClassificationListVectorCalculator);
 
 #if !defined(MEDIAPIPE_DISABLE_GL_COMPUTE)
 typedef ConcatenateVectorCalculator<::tflite::gpu::gl::GlBuffer>
     ConcatenateGlBufferVectorCalculator;
-MEDIAPIPE_REGISTER_NODE(ConcatenateGlBufferVectorCalculator);
+REGISTER_CALCULATOR(ConcatenateGlBufferVectorCalculator);
 #endif
 
 typedef ConcatenateVectorCalculator<mediapipe::RenderData>
     ConcatenateRenderDataVectorCalculator;
-MEDIAPIPE_REGISTER_NODE(ConcatenateRenderDataVectorCalculator);
+REGISTER_CALCULATOR(ConcatenateRenderDataVectorCalculator);
 
 }  // namespace mediapipe

@@ -48,19 +48,19 @@ class StatusHandler {
   // All subclasses of StatusHandler must implement these static functions with
   // the following signatures:
   //
-  // static absl::Status FillExpectations(
+  // static mediapipe::Status FillExpectations(
   //     const MediaPipeOptions& extendable_options,
   //     PacketTypeSet* input_side_packets);
   //
-  // static absl::Status HandlePreRunStatus(
+  // static mediapipe::Status HandlePreRunStatus(
   //     const MediaPipeOptions& extendable_options,
   //     const PacketSet& input_side_packets,
-  //     const absl::Status& pre_run_status);
+  //     const mediapipe::Status& pre_run_status);
   //
-  // static absl::Status HandleStatus(
+  // static mediapipe::Status HandleStatus(
   //     const MediaPipeOptions& extendable_options,
   //     const PacketSet& input_side_packets,
-  //     const absl::Status& run_status);
+  //     const mediapipe::Status& run_status);
   //
   // FillExpectations() is used to validate the graph and it is analogous to the
   // function in calculator.h, packet_generator.h, and packet_factory.h.
@@ -90,16 +90,17 @@ namespace internal {
 class StaticAccessToStatusHandler {
  public:
   virtual ~StaticAccessToStatusHandler() {}
-  virtual absl::Status FillExpectations(
+  virtual mediapipe::Status FillExpectations(
       const MediaPipeOptions& extendable_options,
       PacketTypeSet* input_side_packets) = 0;
-  virtual absl::Status HandlePreRunStatus(
+  virtual mediapipe::Status HandlePreRunStatus(
       const MediaPipeOptions& extendable_options,
       const PacketSet& input_side_packets,
-      const absl::Status& pre_run_status) = 0;
-  virtual absl::Status HandleStatus(const MediaPipeOptions& extendable_options,
-                                    const PacketSet& input_side_packets,  //
-                                    const absl::Status& run_status) = 0;
+      const mediapipe::Status& pre_run_status) = 0;
+  virtual mediapipe::Status HandleStatus(
+      const MediaPipeOptions& extendable_options,
+      const PacketSet& input_side_packets,  //
+      const mediapipe::Status& run_status) = 0;
 };
 
 using StaticAccessToStatusHandlerRegistry =
@@ -110,7 +111,7 @@ using StaticAccessToStatusHandlerRegistry =
 template <class T>
 constexpr bool StatusHandlerHasFillExpectations(
     decltype(&T::FillExpectations) /* unused */) {
-  typedef absl::Status (*FillExpectationsType)(
+  typedef mediapipe::Status (*FillExpectationsType)(
       const MediaPipeOptions& extendable_options,
       PacketTypeSet* input_side_packets);
   return std::is_same<decltype(&T::FillExpectations),
@@ -123,18 +124,19 @@ constexpr bool StatusHandlerHasFillExpectations(...) {
 template <class T>
 constexpr bool StatusHandlerHasHandlePreRunStatus(
     decltype(&T::HandlePreRunStatus) /* unused */) {
-  typedef absl::Status (*HandlePreRunStatusType)(
+  typedef mediapipe::Status (*HandlePreRunStatusType)(
       const MediaPipeOptions& extendable_options,
-      const PacketSet& input_side_packets, const absl::Status& pre_run_status);
+      const PacketSet& input_side_packets,
+      const mediapipe::Status& pre_run_status);
   return std::is_same<decltype(&T::HandlePreRunStatus),
                       HandlePreRunStatusType>::value;
 }
 template <class T>
 constexpr bool StatusHandlerHasHandleStatus(
     decltype(&T::HandleStatus) /* unused */) {
-  typedef absl::Status (*HandleStatusType)(
+  typedef mediapipe::Status (*HandleStatusType)(
       const MediaPipeOptions& extendable_options,
-      const PacketSet& input_side_packets, const absl::Status& run_status);
+      const PacketSet& input_side_packets, const mediapipe::Status& run_status);
   return std::is_same<decltype(&T::HandleStatus), HandleStatusType>::value;
 }
 template <class T>
@@ -164,22 +166,23 @@ class StaticAccessToStatusHandlerTyped : public StaticAccessToStatusHandler {
                 "HandleStatus() must be defined with the correct signature in "
                 "every StatusHandler.");
 
-  absl::Status FillExpectations(const MediaPipeOptions& extendable_options,
-                                PacketTypeSet* input_side_packets) final {
+  mediapipe::Status FillExpectations(const MediaPipeOptions& extendable_options,
+                                     PacketTypeSet* input_side_packets) final {
     return StatusHandlerSubclass::FillExpectations(extendable_options,
                                                    input_side_packets);
   }
 
-  absl::Status HandlePreRunStatus(const MediaPipeOptions& extendable_options,
-                                  const PacketSet& input_side_packets,
-                                  const absl::Status& pre_run_status) final {
+  mediapipe::Status HandlePreRunStatus(
+      const MediaPipeOptions& extendable_options,
+      const PacketSet& input_side_packets,
+      const mediapipe::Status& pre_run_status) final {
     return StatusHandlerSubclass::HandlePreRunStatus(
         extendable_options, input_side_packets, pre_run_status);
   }
 
-  absl::Status HandleStatus(const MediaPipeOptions& extendable_options,
-                            const PacketSet& input_side_packets,
-                            const absl::Status& run_status) final {
+  mediapipe::Status HandleStatus(const MediaPipeOptions& extendable_options,
+                                 const PacketSet& input_side_packets,
+                                 const mediapipe::Status& run_status) final {
     return StatusHandlerSubclass::HandleStatus(extendable_options,
                                                input_side_packets, run_status);
   }

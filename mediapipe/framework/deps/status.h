@@ -20,24 +20,22 @@
 #include <memory>
 #include <string>
 
-#include "absl/base/attributes.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "mediapipe/framework/port/logging.h"
 
 namespace mediapipe {
 
-using Status ABSL_DEPRECATED("Use absl::Status directly") = absl::Status;
-using StatusCode ABSL_DEPRECATED("Use absl::StatusCode directly") =
-    absl::StatusCode;
+using Status = absl::Status;
+using StatusCode = absl::StatusCode;
 
-ABSL_DEPRECATED("Use absl::OkStatus directly")
-inline absl::Status OkStatus() { return absl::OkStatus(); }
+inline mediapipe::Status OkStatus() { return absl::OkStatus(); }
 
-extern std::string* MediaPipeCheckOpHelperOutOfLine(const absl::Status& v,
+extern std::string* MediaPipeCheckOpHelperOutOfLine(const mediapipe::Status& v,
                                                     const char* msg);
 
-inline std::string* MediaPipeCheckOpHelper(absl::Status v, const char* msg) {
+inline std::string* MediaPipeCheckOpHelper(mediapipe::Status v,
+                                           const char* msg) {
   if (v.ok()) return nullptr;
   return MediaPipeCheckOpHelperOutOfLine(v, msg);
 }
@@ -53,7 +51,7 @@ inline std::string* MediaPipeCheckOpHelper(absl::Status v, const char* msg) {
 #define MEDIAPIPE_DCHECK_OK(val) MEDIAPIPE_CHECK_OK(val)
 #else
 #define MEDIAPIPE_DCHECK_OK(val) \
-  while (false && (absl::OkStatus() == (val))) LOG(FATAL)
+  while (false && (mediapipe::OkStatus() == (val))) LOG(FATAL)
 #endif
 
 #define CHECK_OK MEDIAPIPE_CHECK_OK

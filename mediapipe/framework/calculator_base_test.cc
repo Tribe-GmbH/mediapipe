@@ -41,7 +41,7 @@ namespace test_ns {
 // streams and input side packets.
 class DeadEndCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc) {
+  static mediapipe::Status GetContract(CalculatorContract* cc) {
     for (int i = 0; i < cc->Inputs().NumEntries(); ++i) {
       cc->Inputs().Index(i).SetAny();
     }
@@ -51,14 +51,16 @@ class DeadEndCalculator : public CalculatorBase {
     for (int i = 0; i < cc->InputSidePackets().NumEntries(); ++i) {
       cc->InputSidePackets().Index(i).SetAny();
     }
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Open(CalculatorContext* cc) override { return absl::OkStatus(); }
+  mediapipe::Status Open(CalculatorContext* cc) override {
+    return mediapipe::OkStatus();
+  }
 
-  absl::Status Process(CalculatorContext* cc) override {
+  mediapipe::Status Process(CalculatorContext* cc) override {
     if (cc->Inputs().NumEntries() > 0) {
-      return absl::OkStatus();
+      return mediapipe::OkStatus();
     } else {
       // This is a source calculator, but we don't produce any outputs.
       return tool::StatusStop();
@@ -71,12 +73,14 @@ namespace whitelisted_ns {
 
 class DeadCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc) {
-    return absl::OkStatus();
+  static mediapipe::Status GetContract(CalculatorContract* cc) {
+    return mediapipe::OkStatus();
   }
-  absl::Status Open(CalculatorContext* cc) override { return absl::OkStatus(); }
-  absl::Status Process(CalculatorContext* cc) override {
-    return absl::OkStatus();
+  mediapipe::Status Open(CalculatorContext* cc) override {
+    return mediapipe::OkStatus();
+  }
+  mediapipe::Status Process(CalculatorContext* cc) override {
+    return mediapipe::OkStatus();
   }
 };
 
@@ -85,12 +89,14 @@ class DeadCalculator : public CalculatorBase {
 
 class EndCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc) {
-    return absl::OkStatus();
+  static mediapipe::Status GetContract(CalculatorContract* cc) {
+    return mediapipe::OkStatus();
   }
-  absl::Status Open(CalculatorContext* cc) override { return absl::OkStatus(); }
-  absl::Status Process(CalculatorContext* cc) override {
-    return absl::OkStatus();
+  mediapipe::Status Open(CalculatorContext* cc) override {
+    return mediapipe::OkStatus();
+  }
+  mediapipe::Status Process(CalculatorContext* cc) override {
+    return mediapipe::OkStatus();
   }
 };
 REGISTER_CALCULATOR(::mediapipe::EndCalculator);
@@ -99,7 +105,7 @@ namespace {
 
 TEST(CalculatorTest, SourceProcessOrder) {
   internal::Collection<OutputStreamManager> output_stream_managers(
-      tool::CreateTagMap(2).value());
+      tool::CreateTagMap(2).ValueOrDie());
 
   PacketType output0_type;
   PacketType output1_type;
@@ -111,7 +117,7 @@ TEST(CalculatorTest, SourceProcessOrder) {
   MP_ASSERT_OK(
       output_stream_managers.Index(1).Initialize("output1", &output1_type));
 
-  PacketSet input_side_packets(tool::CreateTagMap({}).value());
+  PacketSet input_side_packets(tool::CreateTagMap({}).ValueOrDie());
 
   CalculatorState calculator_state("Node", /*node_id=*/0, "Calculator",
                                    CalculatorGraphConfig::Node(), nullptr);
@@ -120,7 +126,7 @@ TEST(CalculatorTest, SourceProcessOrder) {
 
   CalculatorContextManager calculator_context_manager;
   CalculatorContext calculator_context(&calculator_state,
-                                       tool::CreateTagMap({}).value(),
+                                       tool::CreateTagMap({}).ValueOrDie(),
                                        output_stream_managers.TagMap());
   OutputStreamShardSet& output_set = calculator_context.Outputs();
   output_set.Index(0).SetSpec(output_stream_managers.Index(0).Spec());
@@ -161,13 +167,13 @@ TEST(CalculatorTest, CreateByName) {
                 "mediapipe", "DeadEndCalculator")
                 .status()
                 .code(),
-            absl::StatusCode::kNotFound);
+            mediapipe::StatusCode::kNotFound);
 
   EXPECT_EQ(CalculatorBaseRegistry::CreateByName(  //
                 "DeadEndCalculator")
                 .status()
                 .code(),
-            absl::StatusCode::kNotFound);
+            mediapipe::StatusCode::kNotFound);
 }
 
 // Tests registration of a calculator within a whitelisted namespace.

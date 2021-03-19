@@ -60,10 +60,10 @@ class SwitchMuxCalculator : public CalculatorBase {
   static constexpr char kEnableTag[] = "ENABLE";
 
  public:
-  static absl::Status GetContract(CalculatorContract* cc);
+  static mediapipe::Status GetContract(CalculatorContract* cc);
 
-  absl::Status Open(CalculatorContext* cc) override;
-  absl::Status Process(CalculatorContext* cc) override;
+  mediapipe::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
 
  private:
   int channel_index_;
@@ -71,7 +71,7 @@ class SwitchMuxCalculator : public CalculatorBase {
 };
 REGISTER_CALCULATOR(SwitchMuxCalculator);
 
-absl::Status SwitchMuxCalculator::GetContract(CalculatorContract* cc) {
+mediapipe::Status SwitchMuxCalculator::GetContract(CalculatorContract* cc) {
   // Allow any one of kSelectTag, kEnableTag.
   if (cc->Inputs().HasTag(kSelectTag)) {
     cc->Inputs().Tag(kSelectTag).Set<int>();
@@ -124,10 +124,10 @@ absl::Status SwitchMuxCalculator::GetContract(CalculatorContract* cc) {
   }
   cc->SetInputStreamHandler("ImmediateInputStreamHandler");
   cc->SetProcessTimestampBounds(true);
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status SwitchMuxCalculator::Open(CalculatorContext* cc) {
+mediapipe::Status SwitchMuxCalculator::Open(CalculatorContext* cc) {
   channel_index_ = tool::GetChannelIndex(*cc, channel_index_);
   channel_tags_ = ChannelTags(cc->Inputs().TagMap());
 
@@ -140,10 +140,10 @@ absl::Status SwitchMuxCalculator::Open(CalculatorContext* cc) {
       cc->OutputSidePackets().Get(tag, index).Set(input);
     }
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status SwitchMuxCalculator::Process(CalculatorContext* cc) {
+mediapipe::Status SwitchMuxCalculator::Process(CalculatorContext* cc) {
   // Update the input channel index if specified.
   channel_index_ = tool::GetChannelIndex(*cc, channel_index_);
 
@@ -156,7 +156,7 @@ absl::Status SwitchMuxCalculator::Process(CalculatorContext* cc) {
       tool::Relay(input, &output);
     }
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 }  // namespace mediapipe

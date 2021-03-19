@@ -78,17 +78,18 @@ std::unique_ptr<tf::Tensor> ImageFrameToNormalizedTensor(
 //  }
 class ImageFrameToTensorCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc);
+  static mediapipe::Status GetContract(CalculatorContract* cc);
 
-  absl::Status Open(CalculatorContext* cc) override;
-  absl::Status Process(CalculatorContext* cc) override;
+  mediapipe::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
 
  private:
   ImageFrameToTensorCalculatorOptions options_;
 };
 REGISTER_CALCULATOR(ImageFrameToTensorCalculator);
 
-absl::Status ImageFrameToTensorCalculator::GetContract(CalculatorContract* cc) {
+mediapipe::Status ImageFrameToTensorCalculator::GetContract(
+    CalculatorContract* cc) {
   // Start with only one input packet.
   RET_CHECK_EQ(cc->Inputs().NumEntries(), 1)
       << "Only one input stream is supported.";
@@ -100,18 +101,18 @@ absl::Status ImageFrameToTensorCalculator::GetContract(CalculatorContract* cc) {
   cc->Outputs().Index(0).Set<tf::Tensor>(
       // Output TensorFlow Tensor.
   );
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status ImageFrameToTensorCalculator::Open(CalculatorContext* cc) {
+mediapipe::Status ImageFrameToTensorCalculator::Open(CalculatorContext* cc) {
   options_ = cc->Options<ImageFrameToTensorCalculatorOptions>();
   // Inform the framework that we always output at the same timestamp
   // as we receive a packet at.
   cc->SetOffset(TimestampDiff(0));
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status ImageFrameToTensorCalculator::Process(CalculatorContext* cc) {
+mediapipe::Status ImageFrameToTensorCalculator::Process(CalculatorContext* cc) {
   const Packet& input_item = cc->Inputs().Index(0).Value();
   RET_CHECK(!input_item.IsEmpty()) << "Input cannot be empty.";
 
@@ -145,7 +146,7 @@ absl::Status ImageFrameToTensorCalculator::Process(CalculatorContext* cc) {
     } else if (bytes_per_pixel == 4) {
       data_type = tf::DT_FLOAT;
     } else {
-      return absl::InvalidArgumentError(absl::StrCat(
+      return mediapipe::InvalidArgumentError(absl::StrCat(
           "Unsupported image format (", bytes_per_pixel, " bytes per pixel)"));
     }
 
@@ -172,7 +173,7 @@ absl::Status ImageFrameToTensorCalculator::Process(CalculatorContext* cc) {
   }
 
   cc->Outputs().Index(0).Add(tensor.release(), cc->InputTimestamp());
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 }  // namespace mediapipe

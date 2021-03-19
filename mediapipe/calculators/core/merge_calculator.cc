@@ -50,7 +50,7 @@ class MergeCalculator : public Node {
 
   MEDIAPIPE_NODE_CONTRACT(kIn, kOut);
 
-  static absl::Status UpdateContract(CalculatorContract* cc) {
+  static mediapipe::Status UpdateContract(CalculatorContract* cc) {
     RET_CHECK_GT(kIn(cc).Count(), 0) << "Needs at least one input stream";
     if (kIn(cc).Count() == 1) {
       LOG(WARNING)
@@ -59,23 +59,23 @@ class MergeCalculator : public Node {
              "correctly or consider removing this calculator to reduce "
              "unnecessary overhead.";
     }
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Process(CalculatorContext* cc) final {
+  mediapipe::Status Process(CalculatorContext* cc) final {
     // Output the packet from the first input stream with a packet ready at this
     // timestamp.
-    for (const auto& input : kIn(cc)) {
-      if (!input.IsEmpty()) {
-        kOut(cc).Send(input.packet());
-        return absl::OkStatus();
+    for (int i = 0; i < kIn(cc).Count(); ++i) {
+      if (!kIn(cc)[i].IsEmpty()) {
+        kOut(cc).Send(kIn(cc)[i].packet());
+        return mediapipe::OkStatus();
       }
     }
 
     LOG(WARNING) << "Empty input packets at timestamp "
                  << cc->InputTimestamp().Value();
 
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 };
 

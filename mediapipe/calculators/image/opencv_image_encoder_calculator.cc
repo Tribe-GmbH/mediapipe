@@ -38,28 +38,29 @@ namespace mediapipe {
 // }
 class OpenCvImageEncoderCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc);
-  absl::Status Open(CalculatorContext* cc) override;
-  absl::Status Process(CalculatorContext* cc) override;
-  absl::Status Close(CalculatorContext* cc) override;
+  static mediapipe::Status GetContract(CalculatorContract* cc);
+  mediapipe::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
+  mediapipe::Status Close(CalculatorContext* cc) override;
 
  private:
   int encoding_quality_;
 };
 
-absl::Status OpenCvImageEncoderCalculator::GetContract(CalculatorContract* cc) {
+mediapipe::Status OpenCvImageEncoderCalculator::GetContract(
+    CalculatorContract* cc) {
   cc->Inputs().Index(0).Set<ImageFrame>();
   cc->Outputs().Index(0).Set<OpenCvImageEncoderCalculatorResults>();
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status OpenCvImageEncoderCalculator::Open(CalculatorContext* cc) {
+mediapipe::Status OpenCvImageEncoderCalculator::Open(CalculatorContext* cc) {
   auto options = cc->Options<OpenCvImageEncoderCalculatorOptions>();
   encoding_quality_ = options.quality();
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status OpenCvImageEncoderCalculator::Process(CalculatorContext* cc) {
+mediapipe::Status OpenCvImageEncoderCalculator::Process(CalculatorContext* cc) {
   const ImageFrame& image_frame = cc->Inputs().Index(0).Get<ImageFrame>();
   CHECK_EQ(1, image_frame.ByteDepth());
 
@@ -103,14 +104,15 @@ absl::Status OpenCvImageEncoderCalculator::Process(CalculatorContext* cc) {
            << "Fail to encode the image to be jpeg format.";
   }
 
-  encoded_result->set_encoded_image(&encode_buffer[0], encode_buffer.size());
+  encoded_result->set_encoded_image(std::string(absl::string_view(
+      reinterpret_cast<const char*>(&encode_buffer[0]), encode_buffer.size())));
 
   cc->Outputs().Index(0).Add(encoded_result.release(), cc->InputTimestamp());
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status OpenCvImageEncoderCalculator::Close(CalculatorContext* cc) {
-  return absl::OkStatus();
+mediapipe::Status OpenCvImageEncoderCalculator::Close(CalculatorContext* cc) {
+  return mediapipe::OkStatus();
 }
 
 REGISTER_CALCULATOR(OpenCvImageEncoderCalculator);

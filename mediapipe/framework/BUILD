@@ -269,6 +269,12 @@ cc_library(
         "calculator_graph.h",
         "scheduler.h",
     ],
+    defines = select({
+        "//conditions:default": [],
+        "//mediapipe/gpu:disable_gpu": [
+            "MEDIAPIPE_DISABLE_GPU",
+        ],
+    }),
     visibility = [
         ":mediapipe_internal",
     ],
@@ -454,7 +460,6 @@ cc_library(
         ":type_map",
         "//mediapipe/framework/port:logging",
         "//mediapipe/framework/tool:tag_map",
-        "//mediapipe/framework/tool:tag_map_helper",
         "//mediapipe/framework/tool:validate_name",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/memory",
@@ -912,7 +917,7 @@ cc_library(
         "//conditions:default": [],
     }) + select({
         "//conditions:default": [],
-        "//mediapipe/gpu:disable_gpu": ["MEDIAPIPE_DISABLE_GPU=1"],
+        "//mediapipe/gpu:disable_gpu": ["MEDIAPIPE_DISABLE_GPU"],
     }) + select({
         "//conditions:default": [],
         "//mediapipe/framework:disable_rtti_and_exceptions": [
@@ -923,7 +928,6 @@ cc_library(
         "//mediapipe/calculators:__subpackages__",
         "//mediapipe/framework:__subpackages__",
         "//mediapipe/framework/port:__pkg__",
-        "//mediapipe/gpu:__pkg__",
         "//mediapipe/util:__subpackages__",
     ],
 )

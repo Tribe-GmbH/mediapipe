@@ -16,6 +16,5 @@
 #define MEDIAPIPE_PORT_FILE_HELPERS_H_
 
 #include "mediapipe/framework/deps/file_helpers.h"
-#include "mediapipe/framework/deps/file_path.h"
 
 #endif  // MEDIAPIPE_PORT_FILE_HELPERS_H_

@@ -47,7 +47,8 @@ TimestampDiff TimestampDiffFromSeconds(double seconds) {
 }
 }  // namespace
 
-absl::Status PacketResamplerCalculator::GetContract(CalculatorContract* cc) {
+mediapipe::Status PacketResamplerCalculator::GetContract(
+    CalculatorContract* cc) {
   const auto& resampler_options =
       cc->Options<PacketResamplerCalculatorOptions>();
   if (cc->InputSidePackets().HasTag("OPTIONS")) {
@@ -77,10 +78,10 @@ absl::Status PacketResamplerCalculator::GetContract(CalculatorContract* cc) {
     RET_CHECK(cc->InputSidePackets().HasTag("SEED"));
     cc->InputSidePackets().Tag("SEED").Set<std::string>();
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status PacketResamplerCalculator::Open(CalculatorContext* cc) {
+mediapipe::Status PacketResamplerCalculator::Open(CalculatorContext* cc) {
   const auto resampler_options =
       tool::RetrieveOptions(cc->Options<PacketResamplerCalculatorOptions>(),
                             cc->InputSidePackets(), "OPTIONS");
@@ -155,8 +156,8 @@ absl::Status PacketResamplerCalculator::Open(CalculatorContext* cc) {
     const auto& seed = cc->InputSidePackets().Tag("SEED").Get<std::string>();
     random_ = CreateSecureRandom(seed);
     if (random_ == nullptr) {
-      return absl::Status(
-          absl::StatusCode::kInvalidArgument,
+      return mediapipe::Status(
+          mediapipe::StatusCode::kInvalidArgument,
           "SecureRandom is not available.  With \"jitter\" specified, "
           "PacketResamplerCalculator processing cannot proceed.");
     }
@@ -164,17 +165,17 @@ absl::Status PacketResamplerCalculator::Open(CalculatorContext* cc) {
   }
   packet_reservoir_ =
       std::make_unique<PacketReservoir>(packet_reservoir_random_.get());
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status PacketResamplerCalculator::Process(CalculatorContext* cc) {
+mediapipe::Status PacketResamplerCalculator::Process(CalculatorContext* cc) {
   if (cc->InputTimestamp() == Timestamp::PreStream() &&
       cc->Inputs().UsesTags() && cc->Inputs().HasTag("VIDEO_HEADER") &&
       !cc->Inputs().Tag("VIDEO_HEADER").IsEmpty()) {
     video_header_ = cc->Inputs().Tag("VIDEO_HEADER").Get<VideoHeader>();
     video_header_.frame_rate = frame_rate_;
     if (cc->Inputs().Get(input_data_id_).IsEmpty()) {
-      return absl::OkStatus();
+      return mediapipe::OkStatus();
     }
   }
   if (jitter_ != 0.0 && random_ != nullptr) {
@@ -191,7 +192,7 @@ absl::Status PacketResamplerCalculator::Process(CalculatorContext* cc) {
     MP_RETURN_IF_ERROR(ProcessWithoutJitter(cc));
   }
   last_packet_ = cc->Inputs().Get(input_data_id_).Value();
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 void PacketResamplerCalculator::InitializeNextOutputTimestampWithJitter() {
@@ -228,7 +229,7 @@ void PacketResamplerCalculator::UpdateNextOutputTimestampWithJitter() {
       ((1.0 - jitter_) + 2.0 * jitter_ * random_->RandFloat());
 }
 
-absl::Status PacketResamplerCalculator::ProcessWithJitter(
+mediapipe::Status PacketResamplerCalculator::ProcessWithJitter(
     CalculatorContext* cc) {
   RET_CHECK_GT(cc->InputTimestamp(), Timestamp::PreStream());
   RET_CHECK_NE(jitter_, 0.0);
@@ -242,7 +243,7 @@ absl::Status PacketResamplerCalculator::ProcessWithJitter(
           cc->Inputs().Get(input_data_id_).Value().At(next_output_timestamp_));
       UpdateNextOutputTimestampWithJitter();
     }
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
   if (frame_time_usec_ <
@@ -265,21 +266,11 @@ absl::Status PacketResamplerCalculator::ProcessWithJitter(
                                 : cc->Inputs().Get(input_data_id_).Value())
                                .At(next_output_timestamp_));
     UpdateNextOutputTimestampWithJitter();
-    // From now on every time a packet is emitted the timestamp of the next
-    // packet becomes known; that timestamp is stored in next_output_timestamp_.
-    // The only exception to this rule is the packet emitted from Close() which
-    // can only happen when jitter_with_reflection is enabled but in this case
-    // next_output_timestamp_min_ is a non-decreasing lower bound of any
-    // subsequent packet.
-    const Timestamp timestamp_bound = jitter_with_reflection_
-                                          ? next_output_timestamp_min_
-                                          : next_output_timestamp_;
-    cc->Outputs().Get(output_data_id_).SetNextTimestampBound(timestamp_bound);
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status PacketResamplerCalculator::ProcessWithoutJitter(
+mediapipe::Status PacketResamplerCalculator::ProcessWithoutJitter(
     CalculatorContext* cc) {
   RET_CHECK_GT(cc->InputTimestamp(), Timestamp::PreStream());
   RET_CHECK_EQ(jitter_, 0.0);
@@ -342,12 +333,12 @@ absl::Status PacketResamplerCalculator::ProcessWithoutJitter(
         .Get(output_data_id_)
         .SetNextTimestampBound(PeriodIndexToTimestamp(period_count_));
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status PacketResamplerCalculator::Close(CalculatorContext* cc) {
+mediapipe::Status PacketResamplerCalculator::Close(CalculatorContext* cc) {
   if (!cc->GraphStatus().ok()) {
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
   // Emit the last packet received if we have at least one packet, but
   // haven't sent anything for its period.
@@ -359,7 +350,7 @@ absl::Status PacketResamplerCalculator::Close(CalculatorContext* cc) {
   if (!packet_reservoir_->IsEmpty()) {
     OutputWithinLimits(cc, packet_reservoir_->GetSample());
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 Timestamp PacketResamplerCalculator::PeriodIndexToTimestamp(int64 index) const {

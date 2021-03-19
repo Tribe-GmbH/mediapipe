@@ -215,27 +215,28 @@ constexpr int kEyeLandmarkIndicesInFaceLandmarks[] = {
 //
 class UpdateFaceLandmarksCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc) {
+  static mediapipe::Status GetContract(CalculatorContract* cc) {
     cc->Inputs().Tag(kFaceLandmarksTag).Set<NormalizedLandmarkList>();
     cc->Inputs().Tag(kNewEyeLandmarksTag).Set<NormalizedLandmarkList>();
 
     cc->Outputs().Tag(kUpdatedFaceLandmarksTag).Set<NormalizedLandmarkList>();
 
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
-  absl::Status Open(CalculatorContext* cc) {
+  mediapipe::Status Open(CalculatorContext* cc) {
     cc->SetOffset(TimestampDiff(0));
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Process(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
 };
 REGISTER_CALCULATOR(UpdateFaceLandmarksCalculator);
 
-absl::Status UpdateFaceLandmarksCalculator::Process(CalculatorContext* cc) {
+mediapipe::Status UpdateFaceLandmarksCalculator::Process(
+    CalculatorContext* cc) {
   if (cc->Inputs().Tag(kFaceLandmarksTag).IsEmpty() ||
       cc->Inputs().Tag(kNewEyeLandmarksTag).IsEmpty()) {
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
   const auto& face_landmarks =
       cc->Inputs().Tag(kFaceLandmarksTag).Get<NormalizedLandmarkList>();
@@ -262,7 +263,7 @@ absl::Status UpdateFaceLandmarksCalculator::Process(CalculatorContext* cc) {
       .Tag(kUpdatedFaceLandmarksTag)
       .Add(refined_face_landmarks.release(), cc->InputTimestamp());
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 }  // namespace mediapipe

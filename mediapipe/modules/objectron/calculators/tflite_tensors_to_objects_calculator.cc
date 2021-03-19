@@ -59,16 +59,16 @@ namespace mediapipe {
 // }
 class TfLiteTensorsToObjectsCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc);
+  static mediapipe::Status GetContract(CalculatorContract* cc);
 
-  absl::Status Open(CalculatorContext* cc) override;
-  absl::Status Process(CalculatorContext* cc) override;
-  absl::Status Close(CalculatorContext* cc) override;
+  mediapipe::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
+  mediapipe::Status Close(CalculatorContext* cc) override;
 
  private:
-  absl::Status ProcessCPU(CalculatorContext* cc,
-                          FrameAnnotation* output_objects);
-  absl::Status LoadOptions(CalculatorContext* cc);
+  mediapipe::Status ProcessCPU(CalculatorContext* cc,
+                               FrameAnnotation* output_objects);
+  mediapipe::Status LoadOptions(CalculatorContext* cc);
   // Takes point_3d in FrameAnnotation, projects to 2D, and overwrite the
   // point_2d field with the projection.
   void Project3DTo2D(bool portrait, FrameAnnotation* annotation) const;
@@ -88,7 +88,7 @@ class TfLiteTensorsToObjectsCalculator : public CalculatorBase {
 };
 REGISTER_CALCULATOR(TfLiteTensorsToObjectsCalculator);
 
-absl::Status TfLiteTensorsToObjectsCalculator::GetContract(
+mediapipe::Status TfLiteTensorsToObjectsCalculator::GetContract(
     CalculatorContract* cc) {
   RET_CHECK(!cc->Inputs().GetTags().empty());
   RET_CHECK(!cc->Outputs().GetTags().empty());
@@ -100,31 +100,29 @@ absl::Status TfLiteTensorsToObjectsCalculator::GetContract(
   if (cc->Outputs().HasTag(kOutputStreamTag)) {
     cc->Outputs().Tag(kOutputStreamTag).Set<FrameAnnotation>();
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TfLiteTensorsToObjectsCalculator::Open(CalculatorContext* cc) {
+mediapipe::Status TfLiteTensorsToObjectsCalculator::Open(
+    CalculatorContext* cc) {
   MP_RETURN_IF_ERROR(LoadOptions(cc));
-  // Load camera intrinsic matrix.
-  const float fx = options_.normalized_focal_x();
-  const float fy = options_.normalized_focal_y();
-  const float px = options_.normalized_principal_point_x();
-  const float py = options_.normalized_principal_point_y();
   // clang-format off
-  projection_matrix_ << fx, 0.,  px, 0.,
-                        0., fy,  py, 0.,
-                        0., 0., -1., 0.,
-                        0., 0., -1., 0.;
+  projection_matrix_ <<
+      1.5731,   0,       0, 0,
+      0,   2.0975,       0, 0,
+      0,        0, -1.0002, -0.2,
+      0,        0,      -1, 0;
   // clang-format on
   decoder_ = absl::make_unique<Decoder>(
       BeliefDecoderConfig(options_.decoder_config()));
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TfLiteTensorsToObjectsCalculator::Process(CalculatorContext* cc) {
+mediapipe::Status TfLiteTensorsToObjectsCalculator::Process(
+    CalculatorContext* cc) {
   if (cc->Inputs().Tag(kInputStreamTag).IsEmpty()) {
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
   auto output_objects = absl::make_unique<FrameAnnotation>();
@@ -138,10 +136,10 @@ absl::Status TfLiteTensorsToObjectsCalculator::Process(CalculatorContext* cc) {
         .Add(output_objects.release(), cc->InputTimestamp());
   }
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TfLiteTensorsToObjectsCalculator::ProcessCPU(
+mediapipe::Status TfLiteTensorsToObjectsCalculator::ProcessCPU(
     CalculatorContext* cc, FrameAnnotation* output_objects) {
   const auto& input_tensors =
       cc->Inputs().Tag(kInputStreamTag).Get<std::vector<TfLiteTensor>>();
@@ -161,14 +159,15 @@ absl::Status TfLiteTensorsToObjectsCalculator::ProcessCPU(
   AssignObjectIdAndTimestamp(cc->InputTimestamp().Microseconds(),
                              output_objects);
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TfLiteTensorsToObjectsCalculator::Close(CalculatorContext* cc) {
-  return absl::OkStatus();
+mediapipe::Status TfLiteTensorsToObjectsCalculator::Close(
+    CalculatorContext* cc) {
+  return mediapipe::OkStatus();
 }
 
-absl::Status TfLiteTensorsToObjectsCalculator::LoadOptions(
+mediapipe::Status TfLiteTensorsToObjectsCalculator::LoadOptions(
     CalculatorContext* cc) {
   // Get calculator options specified in the graph.
   options_ =
@@ -180,7 +179,7 @@ absl::Status TfLiteTensorsToObjectsCalculator::LoadOptions(
   // Currently only support 2D when num_values_per_keypoint equals to 2.
   CHECK_EQ(options_.num_values_per_keypoint(), 2);
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 void TfLiteTensorsToObjectsCalculator::Project3DTo2D(

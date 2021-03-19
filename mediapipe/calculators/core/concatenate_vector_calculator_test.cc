@@ -28,7 +28,7 @@
 namespace mediapipe {
 
 typedef ConcatenateVectorCalculator<int> TestConcatenateIntVectorCalculator;
-MEDIAPIPE_REGISTER_NODE(TestConcatenateIntVectorCalculator);
+REGISTER_CALCULATOR(TestConcatenateIntVectorCalculator);
 
 void AddInputVector(int index, const std::vector<int>& input, int64 timestamp,
                     CalculatorRunner* runner) {
@@ -384,7 +384,7 @@ TEST(ConcatenateFloatVectorCalculatorTest, OneEmptyStreamNoOutput) {
 
 typedef ConcatenateVectorCalculator<std::unique_ptr<int>>
     TestConcatenateUniqueIntPtrCalculator;
-MEDIAPIPE_REGISTER_NODE(TestConcatenateUniqueIntPtrCalculator);
+REGISTER_CALCULATOR(TestConcatenateUniqueIntPtrCalculator);
 
 TEST(TestConcatenateUniqueIntVectorCalculatorTest, ConsumeOneTimestamp) {
   /* Note: We don't use CalculatorRunner for this test because it keeps copies

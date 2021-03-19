@@ -52,10 +52,10 @@ class ClockTimestampCalculator : public CalculatorBase {
  public:
   ClockTimestampCalculator() {}
 
-  static absl::Status GetContract(CalculatorContract* cc);
+  static mediapipe::Status GetContract(CalculatorContract* cc);
 
-  absl::Status Open(CalculatorContext* cc) override;
-  absl::Status Process(CalculatorContext* cc) override;
+  mediapipe::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
 
  private:
   // Clock object.
@@ -63,7 +63,8 @@ class ClockTimestampCalculator : public CalculatorBase {
 };
 REGISTER_CALCULATOR(ClockTimestampCalculator);
 
-absl::Status ClockTimestampCalculator::GetContract(CalculatorContract* cc) {
+mediapipe::Status ClockTimestampCalculator::GetContract(
+    CalculatorContract* cc) {
   RET_CHECK_EQ(cc->Inputs().NumEntries(), 1);
   RET_CHECK_EQ(cc->Outputs().NumEntries(), 1);
 
@@ -77,10 +78,10 @@ absl::Status ClockTimestampCalculator::GetContract(CalculatorContract* cc) {
         .Set<std::shared_ptr<::mediapipe::Clock>>();
   }
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status ClockTimestampCalculator::Open(CalculatorContext* cc) {
+mediapipe::Status ClockTimestampCalculator::Open(CalculatorContext* cc) {
   // Direct passthrough, as far as timestamp and bounds are concerned.
   cc->SetOffset(TimestampDiff(0));
 
@@ -94,14 +95,14 @@ absl::Status ClockTimestampCalculator::Open(CalculatorContext* cc) {
         ::mediapipe::MonotonicClock::CreateSynchronizedMonotonicClock());
   }
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status ClockTimestampCalculator::Process(CalculatorContext* cc) {
+mediapipe::Status ClockTimestampCalculator::Process(CalculatorContext* cc) {
   // Push the Time packet to output.
   auto timestamp_packet = MakePacket<absl::Time>(clock_->TimeNow());
   cc->Outputs().Index(0).AddPacket(timestamp_packet.At(cc->InputTimestamp()));
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 }  // namespace mediapipe

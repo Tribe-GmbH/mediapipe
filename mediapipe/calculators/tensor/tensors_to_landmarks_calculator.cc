@@ -100,23 +100,23 @@ class TensorsToLandmarksCalculator : public Node {
   MEDIAPIPE_NODE_CONTRACT(kInTensors, kFlipHorizontally, kFlipVertically,
                           kOutLandmarkList, kOutNormalizedLandmarkList);
 
-  absl::Status Open(CalculatorContext* cc) override;
-  absl::Status Process(CalculatorContext* cc) override;
+  mediapipe::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
 
  private:
-  absl::Status LoadOptions(CalculatorContext* cc);
+  mediapipe::Status LoadOptions(CalculatorContext* cc);
   int num_landmarks_ = 0;
   ::mediapipe::TensorsToLandmarksCalculatorOptions options_;
 };
 MEDIAPIPE_REGISTER_NODE(TensorsToLandmarksCalculator);
 
-absl::Status TensorsToLandmarksCalculator::Open(CalculatorContext* cc) {
+mediapipe::Status TensorsToLandmarksCalculator::Open(CalculatorContext* cc) {
   MP_RETURN_IF_ERROR(LoadOptions(cc));
 
   if (kOutNormalizedLandmarkList(cc).IsConnected()) {
     RET_CHECK(options_.has_input_image_height() &&
               options_.has_input_image_width())
-        << "Must provide input width/height for getting normalized landmarks.";
+        << "Must provide input with/height for getting normalized landmarks.";
   }
   if (kOutLandmarkList(cc).IsConnected() &&
       (options_.flip_horizontally() || options_.flip_vertically() ||
@@ -124,15 +124,15 @@ absl::Status TensorsToLandmarksCalculator::Open(CalculatorContext* cc) {
        kFlipVertically(cc).IsConnected())) {
     RET_CHECK(options_.has_input_image_height() &&
               options_.has_input_image_width())
-        << "Must provide input width/height for using flipping when outputing "
+        << "Must provide input with/height for using flipping when outputing "
            "landmarks in absolute coordinates.";
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TensorsToLandmarksCalculator::Process(CalculatorContext* cc) {
+mediapipe::Status TensorsToLandmarksCalculator::Process(CalculatorContext* cc) {
   if (kInTensors(cc).IsEmpty()) {
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
   bool flip_horizontally =
       kFlipHorizontally(cc).GetOr(options_.flip_horizontally());
@@ -204,16 +204,17 @@ absl::Status TensorsToLandmarksCalculator::Process(CalculatorContext* cc) {
     kOutLandmarkList(cc).Send(std::move(output_landmarks));
   }
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TensorsToLandmarksCalculator::LoadOptions(CalculatorContext* cc) {
+mediapipe::Status TensorsToLandmarksCalculator::LoadOptions(
+    CalculatorContext* cc) {
   // Get calculator options specified in the graph.
   options_ = cc->Options<::mediapipe::TensorsToLandmarksCalculatorOptions>();
   RET_CHECK(options_.has_num_landmarks());
   num_landmarks_ = options_.num_landmarks();
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 }  // namespace api2
 }  // namespace mediapipe

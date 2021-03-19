@@ -93,7 +93,7 @@ class ObjectDetectionTensorsToDetectionsCalculator : public CalculatorBase {
  public:
   ObjectDetectionTensorsToDetectionsCalculator() = default;
 
-  static absl::Status GetContract(CalculatorContract* cc) {
+  static mediapipe::Status GetContract(CalculatorContract* cc) {
     cc->Inputs().Tag(kBoxes).Set<tf::Tensor>();
     cc->Inputs().Tag(kScores).Set<tf::Tensor>();
 
@@ -126,10 +126,10 @@ class ObjectDetectionTensorsToDetectionsCalculator : public CalculatorBase {
           .Tag(kLabelMap)
           .Set<std::unique_ptr<std::map<int, std::string>>>();
     }
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Open(CalculatorContext* cc) override {
+  mediapipe::Status Open(CalculatorContext* cc) override {
     if (cc->InputSidePackets().HasTag(kLabelMap)) {
       label_map_ = GetFromUniquePtr<std::map<int, std::string>>(
           cc->InputSidePackets().Tag(kLabelMap));
@@ -141,10 +141,10 @@ class ObjectDetectionTensorsToDetectionsCalculator : public CalculatorBase {
         tensor_dim_to_squeeze_field.begin(), tensor_dim_to_squeeze_field.end());
     std::sort(tensor_dims_to_squeeze_.rbegin(), tensor_dims_to_squeeze_.rend());
     cc->SetOffset(0);
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Process(CalculatorContext* cc) override {
+  mediapipe::Status Process(CalculatorContext* cc) override {
     const auto& options =
         cc->Options<ObjectDetectionsTensorToDetectionsCalculatorOptions>();
 
@@ -205,15 +205,15 @@ class ObjectDetectionTensorsToDetectionsCalculator : public CalculatorBase {
         .Tag(kDetections)
         .Add(output_detections.release(), cc->InputTimestamp());
 
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
  private:
   std::map<int, std::string>* label_map_;
   std::vector<int32> tensor_dims_to_squeeze_;
 
-  absl::StatusOr<tf::Tensor> MaybeSqueezeDims(const std::string& tensor_tag,
-                                              const tf::Tensor& input_tensor) {
+  mediapipe::StatusOr<tf::Tensor> MaybeSqueezeDims(
+      const std::string& tensor_tag, const tf::Tensor& input_tensor) {
     if (tensor_dims_to_squeeze_.empty()) {
       return input_tensor;
     }

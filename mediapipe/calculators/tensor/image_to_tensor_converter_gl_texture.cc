@@ -27,7 +27,6 @@
 #include "mediapipe/calculators/tensor/image_to_tensor_converter_gl_utils.h"
 #include "mediapipe/calculators/tensor/image_to_tensor_utils.h"
 #include "mediapipe/framework/calculator_framework.h"
-#include "mediapipe/framework/formats/image.h"
 #include "mediapipe/framework/formats/tensor.h"
 #include "mediapipe/framework/port/canonical_errors.h"
 #include "mediapipe/framework/port/ret_check.h"
@@ -35,6 +34,7 @@
 #include "mediapipe/framework/port/statusor.h"
 #include "mediapipe/gpu/gl_calculator_helper.h"
 #include "mediapipe/gpu/gl_simple_shaders.h"
+#include "mediapipe/gpu/gpu_buffer.h"
 #include "mediapipe/gpu/shader_util.h"
 
 namespace mediapipe {
@@ -47,11 +47,11 @@ constexpr int kNumAttributes = 2;
 
 class GlProcessor : public ImageToTensorConverter {
  public:
-  absl::Status Init(CalculatorContext* cc, bool input_starts_at_bottom,
-                    BorderMode border_mode) {
+  mediapipe::Status Init(CalculatorContext* cc, bool input_starts_at_bottom,
+                         BorderMode border_mode) {
     MP_RETURN_IF_ERROR(gl_helper_.Open(cc));
     return gl_helper_.RunInGlContext([this, input_starts_at_bottom,
-                                      border_mode]() -> absl::Status {
+                                      border_mode]() -> mediapipe::Status {
       use_custom_zero_border_ =
           border_mode == BorderMode::kZero &&
           !IsGlClampToBorderSupported(gl_helper_.GetGlContext());
@@ -164,14 +164,20 @@ class GlProcessor : public ImageToTensorConverter {
 
       glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-      return absl::OkStatus();
+      return mediapipe::OkStatus();
     });
   }
 
-  absl::StatusOr<Tensor> Convert(const mediapipe::Image& input,
-                                 const RotatedRect& roi,
-                                 const Size& output_dims, float range_min,
-                                 float range_max) override {
+  Size GetImageSize(const Packet& image_packet) override {
+    const auto& image = image_packet.Get<mediapipe::GpuBuffer>();
+    return {image.width(), image.height()};
+  }
+
+  mediapipe::StatusOr<Tensor> Convert(const Packet& image_packet,
+                                      const RotatedRect& roi,
+                                      const Size& output_dims, float range_min,
+                                      float range_max) override {
+    const auto& input = image_packet.Get<mediapipe::GpuBuffer>();
     if (input.format() != mediapipe::GpuBufferFormat::kBGRA32) {
       return InvalidArgumentError(
           absl::StrCat("Only BGRA/RGBA textures are supported, passed format: ",
@@ -183,9 +189,9 @@ class GlProcessor : public ImageToTensorConverter {
         Tensor::ElementType::kFloat32,
         Tensor::Shape{1, output_dims.height, output_dims.width, kNumChannels});
 
-    MP_RETURN_IF_ERROR(
-        gl_helper_.RunInGlContext([this, &tensor, &input, &roi, &output_dims,
-                                   range_min, range_max]() -> absl::Status {
+    MP_RETURN_IF_ERROR(gl_helper_.RunInGlContext(
+        [this, &tensor, &input, &roi, &output_dims, range_min,
+         range_max]() -> mediapipe::Status {
           auto input_texture = gl_helper_.CreateSourceTexture(input);
 
           constexpr float kInputImageRangeMin = 0.0f;
@@ -199,18 +205,21 @@ class GlProcessor : public ImageToTensorConverter {
                                             /*flip_horizontaly=*/false,
                                             transform.scale, transform.offset,
                                             output_dims, &tensor_view));
-          return absl::OkStatus();
+          return mediapipe::OkStatus();
         }));
 
     return tensor;
   }
 
-  absl::Status ExtractSubRect(const mediapipe::GlTexture& texture,
-                              const RotatedRect& sub_rect,
-                              bool flip_horizontaly, float alpha, float beta,
-                              const Size& output_dims,
-                              Tensor::OpenGlTexture2dView* output) {
+  mediapipe::Status ExtractSubRect(const mediapipe::GlTexture& texture,
+                                   const RotatedRect& sub_rect,
+                                   bool flip_horizontaly, float alpha,
+                                   float beta, const Size& output_dims,
+                                   Tensor::OpenGlTexture2dView* output) {
     std::array<float, 16> transform_mat;
+    GetRotatedSubRectToRectTransformMatrix(sub_rect, texture.width(),
+                                           texture.height(), flip_horizontaly,
+                                           &transform_mat);
 
     glDisable(GL_DEPTH_TEST);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_);
@@ -249,24 +258,7 @@ class GlProcessor : public ImageToTensorConverter {
     glUseProgram(program_);
     glUniform1f(alpha_id_, alpha);
     glUniform1f(beta_id_, beta);
-
-    // If our context is ES2, then we must use GL_FALSE for our 'transpose'
-    // GLboolean in glUniformMatrix4fv, or else we'll get an INVALID_VALUE
-    // error. So in that case, we'll grab the transpose of our original matrix
-    // and send that instead.
-    const auto gl_context = mediapipe::GlContext::GetCurrent();
-    LOG_IF(FATAL, !gl_context) << "GlContext is not bound to the thread.";
-    if (gl_context->GetGlVersion() == mediapipe::GlVersion::kGLES2) {
-      GetTransposedRotatedSubRectToRectTransformMatrix(
-          sub_rect, texture.width(), texture.height(), flip_horizontaly,
-          &transform_mat);
-      glUniformMatrix4fv(matrix_id_, 1, GL_FALSE, transform_mat.data());
-    } else {
-      GetRotatedSubRectToRectTransformMatrix(sub_rect, texture.width(),
-                                             texture.height(), flip_horizontaly,
-                                             &transform_mat);
-      glUniformMatrix4fv(matrix_id_, 1, GL_TRUE, transform_mat.data());
-    }
+    glUniformMatrix4fv(matrix_id_, 1, GL_TRUE, transform_mat.data());
 
     // vao
     glBindVertexArray(vao_);
@@ -300,7 +292,7 @@ class GlProcessor : public ImageToTensorConverter {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
   ~GlProcessor() override {
@@ -328,7 +320,7 @@ class GlProcessor : public ImageToTensorConverter {
 
 }  // namespace
 
-absl::StatusOr<std::unique_ptr<ImageToTensorConverter>>
+mediapipe::StatusOr<std::unique_ptr<ImageToTensorConverter>>
 CreateImageToGlTextureTensorConverter(CalculatorContext* cc,
                                       bool input_starts_at_bottom,
                                       BorderMode border_mode) {

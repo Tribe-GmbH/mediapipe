@@ -98,11 +98,11 @@ class AnnotationsToRenderDataCalculator : public CalculatorBase {
   AnnotationsToRenderDataCalculator& operator=(
       const AnnotationsToRenderDataCalculator&) = delete;
 
-  static absl::Status GetContract(CalculatorContract* cc);
+  static mediapipe::Status GetContract(CalculatorContract* cc);
 
-  absl::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Open(CalculatorContext* cc) override;
 
-  absl::Status Process(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
 
  private:
   static void SetRenderAnnotationColorThickness(
@@ -134,7 +134,7 @@ class AnnotationsToRenderDataCalculator : public CalculatorBase {
 };
 REGISTER_CALCULATOR(AnnotationsToRenderDataCalculator);
 
-absl::Status AnnotationsToRenderDataCalculator::GetContract(
+mediapipe::Status AnnotationsToRenderDataCalculator::GetContract(
     CalculatorContract* cc) {
   RET_CHECK(cc->Inputs().HasTag(kAnnotationTag)) << "No input stream found.";
   if (cc->Inputs().HasTag(kAnnotationTag)) {
@@ -142,17 +142,19 @@ absl::Status AnnotationsToRenderDataCalculator::GetContract(
   }
   cc->Outputs().Tag(kRenderDataTag).Set<RenderData>();
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status AnnotationsToRenderDataCalculator::Open(CalculatorContext* cc) {
+mediapipe::Status AnnotationsToRenderDataCalculator::Open(
+    CalculatorContext* cc) {
   cc->SetOffset(TimestampDiff(0));
   options_ = cc->Options<AnnotationsToRenderDataCalculatorOptions>();
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status AnnotationsToRenderDataCalculator::Process(CalculatorContext* cc) {
+mediapipe::Status AnnotationsToRenderDataCalculator::Process(
+    CalculatorContext* cc) {
   auto render_data = absl::make_unique<RenderData>();
   bool visualize_depth = options_.visualize_landmark_depth();
   float z_min = 0.f;
@@ -213,7 +215,7 @@ absl::Status AnnotationsToRenderDataCalculator::Process(CalculatorContext* cc) {
       .Tag(kRenderDataTag)
       .Add(render_data.release(), cc->InputTimestamp());
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 void AnnotationsToRenderDataCalculator::AddConnectionToRenderData(

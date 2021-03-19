@@ -30,12 +30,13 @@ class VisualScorer {
   explicit VisualScorer(const VisualScorerOptions& options);
 
   // Computes a score on a salientregion and returns a value [0...1].
-  absl::Status CalculateScore(const cv::Mat& image, const SalientRegion& region,
-                              float* score) const;
+  mediapipe::Status CalculateScore(const cv::Mat& image,
+                                   const SalientRegion& region,
+                                   float* score) const;
 
  private:
-  absl::Status CalculateColorfulness(const cv::Mat& image,
-                                     float* colorfulness) const;
+  mediapipe::Status CalculateColorfulness(const cv::Mat& image,
+                                          float* colorfulness) const;
 
   VisualScorerOptions options_;
 };

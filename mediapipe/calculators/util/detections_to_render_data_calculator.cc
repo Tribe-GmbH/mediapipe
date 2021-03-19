@@ -82,11 +82,11 @@ class DetectionsToRenderDataCalculator : public CalculatorBase {
   DetectionsToRenderDataCalculator& operator=(
       const DetectionsToRenderDataCalculator&) = delete;
 
-  static absl::Status GetContract(CalculatorContract* cc);
+  static mediapipe::Status GetContract(CalculatorContract* cc);
 
-  absl::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Open(CalculatorContext* cc) override;
 
-  absl::Status Process(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
 
  private:
   // These utility methods are supposed to be used only by this class. No
@@ -122,7 +122,7 @@ class DetectionsToRenderDataCalculator : public CalculatorBase {
 };
 REGISTER_CALCULATOR(DetectionsToRenderDataCalculator);
 
-absl::Status DetectionsToRenderDataCalculator::GetContract(
+mediapipe::Status DetectionsToRenderDataCalculator::GetContract(
     CalculatorContract* cc) {
   RET_CHECK(cc->Inputs().HasTag(kDetectionListTag) ||
             cc->Inputs().HasTag(kDetectionsTag) ||
@@ -139,16 +139,18 @@ absl::Status DetectionsToRenderDataCalculator::GetContract(
     cc->Inputs().Tag(kDetectionsTag).Set<std::vector<Detection>>();
   }
   cc->Outputs().Tag(kRenderDataTag).Set<RenderData>();
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status DetectionsToRenderDataCalculator::Open(CalculatorContext* cc) {
+mediapipe::Status DetectionsToRenderDataCalculator::Open(
+    CalculatorContext* cc) {
   cc->SetOffset(TimestampDiff(0));
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status DetectionsToRenderDataCalculator::Process(CalculatorContext* cc) {
+mediapipe::Status DetectionsToRenderDataCalculator::Process(
+    CalculatorContext* cc) {
   const auto& options = cc->Options<DetectionsToRenderDataCalculatorOptions>();
   const bool has_detection_from_list =
       cc->Inputs().HasTag(kDetectionListTag) && !cc->Inputs()
@@ -163,7 +165,7 @@ absl::Status DetectionsToRenderDataCalculator::Process(CalculatorContext* cc) {
                                     !cc->Inputs().Tag(kDetectionTag).IsEmpty();
   if (!options.produce_empty_packet() && !has_detection_from_list &&
       !has_detection_from_vector && !has_single_detection) {
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
   // TODO: Add score threshold to
@@ -189,7 +191,7 @@ absl::Status DetectionsToRenderDataCalculator::Process(CalculatorContext* cc) {
   cc->Outputs()
       .Tag(kRenderDataTag)
       .Add(render_data.release(), cc->InputTimestamp());
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 void DetectionsToRenderDataCalculator::SetRenderAnnotationColorThickness(

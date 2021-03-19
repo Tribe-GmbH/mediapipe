@@ -33,6 +33,8 @@ constexpr char kRenderDataTag[] = "RENDER_DATA";
 constexpr char kImageSizeTag[] = "IMAGE_SIZE";
 constexpr char kLeftIrisDepthTag[] = "LEFT_IRIS_DEPTH_MM";
 constexpr char kRightIrisDepthTag[] = "RIGHT_IRIS_DEPTH_MM";
+constexpr char kLeftIris3DTag[] = "LEFT_IRIS_3D";
+constexpr char kRightIris3DTag[] = "RIGHT_IRIS_3D";
 constexpr char kOvalLabel[] = "OVAL";
 constexpr float kFontHeightScale = 1.5f;
 constexpr int kNumIrisLandmarksPerEye = 5;
@@ -108,7 +110,7 @@ float CalculateDepth(const NormalizedLandmark& center, float focal_length,
 // }
 class IrisToRenderDataCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc) {
+  static mediapipe::Status GetContract(CalculatorContract* cc) {
     cc->Inputs().Tag(kIrisTag).Set<NormalizedLandmarkList>();
     cc->Outputs().Tag(kRenderDataTag).Set<RenderData>();
     cc->Inputs().Tag(kImageSizeTag).Set<std::pair<int, int>>();
@@ -119,12 +121,12 @@ class IrisToRenderDataCalculator : public CalculatorBase {
     if (cc->Inputs().HasTag(kRightIrisDepthTag)) {
       cc->Inputs().Tag(kRightIrisDepthTag).Set<float>();
     }
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Open(CalculatorContext* cc) override;
 
-  absl::Status Process(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
 
  private:
   void RenderIris(const NormalizedLandmarkList& iris_landmarks,
@@ -150,15 +152,15 @@ class IrisToRenderDataCalculator : public CalculatorBase {
 };
 REGISTER_CALCULATOR(IrisToRenderDataCalculator);
 
-absl::Status IrisToRenderDataCalculator::Open(CalculatorContext* cc) {
+mediapipe::Status IrisToRenderDataCalculator::Open(CalculatorContext* cc) {
   cc->SetOffset(TimestampDiff(0));
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status IrisToRenderDataCalculator::Process(CalculatorContext* cc) {
+mediapipe::Status IrisToRenderDataCalculator::Process(CalculatorContext* cc) {
   // Only process if there's input landmarks.
   if (cc->Inputs().Tag(kIrisTag).IsEmpty()) {
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
   const auto& options =
       cc->Options<::mediapipe::IrisToRenderDataCalculatorOptions>();
@@ -185,34 +187,16 @@ absl::Status IrisToRenderDataCalculator::Process(CalculatorContext* cc) {
   RenderIris(*right_iris, options, image_size, right_iris_size,
              render_data.get());
 
-  std::vector<std::string> lines;
-  std::string line;
-  if (cc->Inputs().HasTag(kLeftIrisDepthTag) &&
-      !cc->Inputs().Tag(kLeftIrisDepthTag).IsEmpty()) {
-    const float left_iris_depth =
-        cc->Inputs().Tag(kLeftIrisDepthTag).Get<float>();
-    if (!std::isinf(left_iris_depth)) {
-      line = "Left : ";
-      absl::StrAppend(&line, ":", std::round(left_iris_depth / 10), " cm");
-      lines.emplace_back(line);
-    }
-  }
-  if (cc->Inputs().HasTag(kRightIrisDepthTag) &&
-      !cc->Inputs().Tag(kRightIrisDepthTag).IsEmpty()) {
-    const float right_iris_depth =
-        cc->Inputs().Tag(kRightIrisDepthTag).Get<float>();
-    if (!std::isinf(right_iris_depth)) {
-      line = "Right : ";
-      absl::StrAppend(&line, ":", std::round(right_iris_depth / 10), " cm");
-      lines.emplace_back(line);
-    }
-  }
-  AddTextRenderData(options, image_size, lines, render_data.get());
-
+  cc->Outputs()
+          .Tag(kLeftIris3DTag)
+          .AddPacket(render_data.release(), cc->InputTimestamp());
+  cc->Outputs()
+          .Tag(kRightIris3DTag)
+          .AddPacket(render_data.release(), cc->InputTimestamp());
   cc->Outputs()
       .Tag(kRenderDataTag)
       .Add(render_data.release(), cc->InputTimestamp());
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 void IrisToRenderDataCalculator::AddTextRenderData(

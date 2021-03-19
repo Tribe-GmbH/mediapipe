@@ -42,20 +42,6 @@ const char kConfigA[] = R"(
     input_stream: "VIDEO:camera_frames"
     input_stream: "SALIENT_REGIONS:detection_set"
     output_stream: "BORDERS:borders"
-    options: {
-      [mediapipe.autoflip.ContentZoomingCalculatorOptions.ext]: {
-        max_zoom_value_deg: 0
-        kinematic_options_zoom {
-          min_motion_to_reframe: 1.2
-        }
-        kinematic_options_tilt {
-          min_motion_to_reframe: 1.2
-        }
-        kinematic_options_pan {
-          min_motion_to_reframe: 1.2
-        }
-      }
-    }
     )";
 
 const char kConfigB[] = R"(
@@ -69,16 +55,6 @@ const char kConfigB[] = R"(
           width: 1000
           height: 500
         }
-        max_zoom_value_deg: 0
-        kinematic_options_zoom {
-          min_motion_to_reframe: 1.2
-        }
-        kinematic_options_tilt {
-          min_motion_to_reframe: 1.2
-        }
-        kinematic_options_pan {
-          min_motion_to_reframe: 1.2
-        }
       }
     }
     )";
@@ -88,20 +64,6 @@ const char kConfigC[] = R"(
     input_stream: "VIDEO_SIZE:size"
     input_stream: "SALIENT_REGIONS:detection_set"
     output_stream: "BORDERS:borders"
-    options: {
-      [mediapipe.autoflip.ContentZoomingCalculatorOptions.ext]: {
-        max_zoom_value_deg: 0
-        kinematic_options_zoom {
-          min_motion_to_reframe: 1.2
-        }
-        kinematic_options_tilt {
-          min_motion_to_reframe: 1.2
-        }
-        kinematic_options_pan {
-          min_motion_to_reframe: 1.2
-        }
-      }
-    }
     )";
 
 const char kConfigD[] = R"(
@@ -109,20 +71,6 @@ const char kConfigD[] = R"(
     input_stream: "VIDEO_SIZE:size"
     input_stream: "DETECTIONS:detections"
     output_stream: "CROP_RECT:rect"
-    options: {
-      [mediapipe.autoflip.ContentZoomingCalculatorOptions.ext]: {
-        max_zoom_value_deg: 0
-        kinematic_options_zoom {
-          min_motion_to_reframe: 1.2
-        }
-        kinematic_options_tilt {
-          min_motion_to_reframe: 1.2
-        }
-        kinematic_options_pan {
-          min_motion_to_reframe: 1.2
-        }
-      }
-    }
     )";
 
 void CheckBorder(const StaticFeatures& static_features, int width, int height,
@@ -143,9 +91,8 @@ void CheckBorder(const StaticFeatures& static_features, int width, int height,
   EXPECT_EQ(Border::BOTTOM, part.relative_position());
 }
 
-void AddDetectionFrameSize(const cv::Rect_<float>& position, const int64 time,
-                           const int width, const int height,
-                           CalculatorRunner* runner) {
+void AddDetection(const cv::Rect_<float>& position, const int64 time,
+                  CalculatorRunner* runner) {
   auto detections = std::make_unique<std::vector<mediapipe::Detection>>();
   mediapipe::Detection detection;
   detection.mutable_location_data()->set_format(
@@ -164,15 +111,10 @@ void AddDetectionFrameSize(const cv::Rect_<float>& position, const int64 time,
       ->Tag("DETECTIONS")
       .packets.push_back(Adopt(detections.release()).At(Timestamp(time)));
 
-  auto input_size = ::absl::make_unique<std::pair<int, int>>(width, height);
+  auto input_size = ::absl::make_unique<std::pair<int, int>>(1000, 1000);
   runner->MutableInputs()
       ->Tag("VIDEO_SIZE")
       .packets.push_back(Adopt(input_size.release()).At(Timestamp(time)));
-}
-
-void AddDetection(const cv::Rect_<float>& position, const int64 time,
-                  CalculatorRunner* runner) {
-  AddDetectionFrameSize(position, time, 1000, 1000, runner);
 }
 
 void CheckCropRect(const int x_center, const int y_center, const int width,
@@ -491,53 +433,7 @@ TEST(ContentZoomingCalculatorTest, EmptyDetections) {
       ->Tag("VIDEO_SIZE")
       .packets.push_back(Adopt(input_size.release()).At(Timestamp(0)));
   MP_ASSERT_OK(runner->Run());
-  CheckCropRect(500, 500, 1000, 1000, 0,
-                runner->Outputs().Tag("CROP_RECT").packets);
-}
-
-TEST(ContentZoomingCalculatorTest, ResolutionChangeStationary) {
-  auto config = ParseTextProtoOrDie<CalculatorGraphConfig::Node>(kConfigD);
-  auto runner = ::absl::make_unique<CalculatorRunner>(config);
-  AddDetectionFrameSize(cv::Rect_<float>(.4, .4, .2, .2), 0, 1000, 1000,
-                        runner.get());
-  AddDetectionFrameSize(cv::Rect_<float>(.4, .4, .2, .2), 1, 500, 500,
-                        runner.get());
-  MP_ASSERT_OK(runner->Run());
-  CheckCropRect(500, 500, 222, 222, 0,
-                runner->Outputs().Tag("CROP_RECT").packets);
-  CheckCropRect(500 * 0.5, 500 * 0.5, 222 * 0.5, 222 * 0.5, 1,
-                runner->Outputs().Tag("CROP_RECT").packets);
-}
-
-TEST(ContentZoomingCalculatorTest, ResolutionChangeZooming) {
-  auto config = ParseTextProtoOrDie<CalculatorGraphConfig::Node>(kConfigD);
-  auto runner = ::absl::make_unique<CalculatorRunner>(config);
-  AddDetectionFrameSize(cv::Rect_<float>(.1, .1, .8, .8), 0, 1000, 1000,
-                        runner.get());
-  AddDetectionFrameSize(cv::Rect_<float>(.4, .4, .2, .2), 1000000, 1000, 1000,
-                        runner.get());
-  AddDetectionFrameSize(cv::Rect_<float>(.4, .4, .2, .2), 2000000, 500, 500,
-                        runner.get());
-  MP_ASSERT_OK(runner->Run());
-  CheckCropRect(500, 500, 888, 888, 0,
-                runner->Outputs().Tag("CROP_RECT").packets);
-  CheckCropRect(500, 500, 588, 588, 1,
-                runner->Outputs().Tag("CROP_RECT").packets);
-  CheckCropRect(500 * 0.5, 500 * 0.5, 288 * 0.5, 288 * 0.5, 2,
-                runner->Outputs().Tag("CROP_RECT").packets);
-}
-
-TEST(ContentZoomingCalculatorTest, MaxZoomValue) {
-  auto config = ParseTextProtoOrDie<CalculatorGraphConfig::Node>(kConfigD);
-  auto* options = config.mutable_options()->MutableExtension(
-      ContentZoomingCalculatorOptions::ext);
-  options->set_max_zoom_value_deg(55);
-  auto runner = ::absl::make_unique<CalculatorRunner>(config);
-  AddDetectionFrameSize(cv::Rect_<float>(.4, .4, .2, .2), 0, 1000, 1000,
-                        runner.get());
-  MP_ASSERT_OK(runner->Run());
-  // 55/60 * 1000 = 916
-  CheckCropRect(500, 500, 916, 916, 0,
+  CheckCropRect(0, 0, 1000, 1000, 0,
                 runner->Outputs().Tag("CROP_RECT").packets);
 }
 

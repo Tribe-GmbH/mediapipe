@@ -28,17 +28,17 @@ namespace tf = ::tensorflow;
 
 class TensorToVectorFloatCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc);
+  static mediapipe::Status GetContract(CalculatorContract* cc);
 
-  absl::Status Open(CalculatorContext* cc) override;
-  absl::Status Process(CalculatorContext* cc) override;
+  mediapipe::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
 
  private:
   TensorToVectorFloatCalculatorOptions options_;
 };
 REGISTER_CALCULATOR(TensorToVectorFloatCalculator);
 
-absl::Status TensorToVectorFloatCalculator::GetContract(
+mediapipe::Status TensorToVectorFloatCalculator::GetContract(
     CalculatorContract* cc) {
   // Start with only one input packet.
   RET_CHECK_EQ(cc->Inputs().NumEntries(), 1)
@@ -58,22 +58,16 @@ absl::Status TensorToVectorFloatCalculator::GetContract(
         // Output vector<float>.
     );
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TensorToVectorFloatCalculator::Open(CalculatorContext* cc) {
+mediapipe::Status TensorToVectorFloatCalculator::Open(CalculatorContext* cc) {
   options_ = cc->Options<TensorToVectorFloatCalculatorOptions>();
-
-  // Inform mediapipe that this calculator produces an output at time t for
-  // each input received at time t (i.e. this calculator does not buffer
-  // inputs). This enables mediapipe to propagate time of arrival estimates in
-  // mediapipe graphs through this calculator.
-  cc->SetOffset(/*offset=*/0);
-
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TensorToVectorFloatCalculator::Process(CalculatorContext* cc) {
+mediapipe::Status TensorToVectorFloatCalculator::Process(
+    CalculatorContext* cc) {
   const tf::Tensor& input_tensor =
       cc->Inputs().Index(0).Value().Get<tf::Tensor>();
   RET_CHECK(tf::DT_FLOAT == input_tensor.dtype())
@@ -109,7 +103,7 @@ absl::Status TensorToVectorFloatCalculator::Process(CalculatorContext* cc) {
     cc->Outputs().Index(0).Add(output.release(), cc->InputTimestamp());
   }
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 }  // namespace mediapipe

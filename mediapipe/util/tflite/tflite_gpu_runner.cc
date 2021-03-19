@@ -83,7 +83,7 @@ ObjectDef GetSSBOObjectDef(int channels) {
 
 }  // namespace
 
-absl::Status TFLiteGPURunner::InitializeWithModel(
+mediapipe::Status TFLiteGPURunner::InitializeWithModel(
     const tflite::FlatBufferModel& flatbuffer,
     const tflite::OpResolver& op_resolver) {
   // GraphFloat32 is created twice because, when OpenCL and OpenGL backends are
@@ -111,23 +111,23 @@ absl::Status TFLiteGPURunner::InitializeWithModel(
   return absl::OkStatus();
 }
 
-absl::StatusOr<int64_t> TFLiteGPURunner::GetInputElements(int id) {
+mediapipe::StatusOr<int64_t> TFLiteGPURunner::GetInputElements(int id) {
   if (id >= input_shapes_.size()) {
-    return absl::InternalError("Wrong input tensor id.");
+    return mediapipe::InternalError("Wrong input tensor id.");
   } else {
     return input_shapes_[id].DimensionsProduct();
   }
 }
 
-absl::StatusOr<int64_t> TFLiteGPURunner::GetOutputElements(int id) {
+mediapipe::StatusOr<int64_t> TFLiteGPURunner::GetOutputElements(int id) {
   if (id >= output_shapes_.size()) {
-    return absl::InternalError("Wrong output tensor id.");
+    return mediapipe::InternalError("Wrong output tensor id.");
   } else {
     return output_shapes_[id].DimensionsProduct();
   }
 }
 
-absl::Status TFLiteGPURunner::Build() {
+mediapipe::Status TFLiteGPURunner::Build() {
   // 1. Prepare inference builder.
   std::unique_ptr<InferenceBuilder> builder;
   // By default, we try CL first & fall back to GL if that fails.
@@ -164,23 +164,23 @@ absl::Status TFLiteGPURunner::Build() {
   return builder->Build(&runner_);
 }
 
-absl::Status TFLiteGPURunner::BindSSBOToInputTensor(GLuint ssbo_id,
-                                                    int input_id) {
+mediapipe::Status TFLiteGPURunner::BindSSBOToInputTensor(GLuint ssbo_id,
+                                                         int input_id) {
   OpenGlBuffer buffer;
   buffer.id = ssbo_id;
   return runner_->SetInputObject(input_id, std::move(buffer));
 }
 
-absl::Status TFLiteGPURunner::BindSSBOToOutputTensor(GLuint ssbo_id,
-                                                     int output_id) {
+mediapipe::Status TFLiteGPURunner::BindSSBOToOutputTensor(GLuint ssbo_id,
+                                                          int output_id) {
   OpenGlBuffer buffer;
   buffer.id = ssbo_id;
   return runner_->SetOutputObject(output_id, std::move(buffer));
 }
 
-absl::Status TFLiteGPURunner::Invoke() { return runner_->Run(); }
+mediapipe::Status TFLiteGPURunner::Invoke() { return runner_->Run(); }
 
-absl::Status TFLiteGPURunner::InitializeOpenGL(
+mediapipe::Status TFLiteGPURunner::InitializeOpenGL(
     std::unique_ptr<InferenceBuilder>* builder) {
   gl::InferenceEnvironmentOptions env_options;
   gl::InferenceEnvironmentProperties properties;

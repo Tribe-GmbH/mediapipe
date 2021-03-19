@@ -99,9 +99,9 @@ std::unique_ptr<CalculatorState> MakeCalculatorState(
 
 std::unique_ptr<CalculatorContext> MakeCalculatorContext(
     CalculatorState* calculator_state) {
-  return absl::make_unique<CalculatorContext>(calculator_state,
-                                              tool::CreateTagMap({}).value(),
-                                              tool::CreateTagMap({}).value());
+  return absl::make_unique<CalculatorContext>(
+      calculator_state, tool::CreateTagMap({}).ValueOrDie(),
+      tool::CreateTagMap({}).ValueOrDie());
 }
 
 TEST(CalculatorTest, NodeId) {

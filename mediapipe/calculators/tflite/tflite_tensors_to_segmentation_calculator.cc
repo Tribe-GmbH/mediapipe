@@ -36,7 +36,7 @@
 #include "tensorflow/lite/delegates/gpu/gl/gl_shader.h"
 #include "tensorflow/lite/delegates/gpu/gl/gl_texture.h"
 #include "tensorflow/lite/delegates/gpu/gl_delegate.h"
-#endif  // !MEDIAPIPE_DISABLE_GPU
+#endif  //  !MEDIAPIPE_DISABLE_GPU
 
 namespace {
 constexpr int kWorkgroupSize = 8;  // Block size for GPU shader.
@@ -69,7 +69,7 @@ using ::tflite::gpu::gl::CreateReadWriteShaderStorageBuffer;
 using ::tflite::gpu::gl::GlBuffer;
 using ::tflite::gpu::gl::GlProgram;
 using ::tflite::gpu::gl::GlShader;
-#endif  // !MEDIAPIPE_DISABLE_GPU
+#endif  //  !MEDIAPIPE_DISABLE_GPU
 
 // Converts TFLite tensors from a tflite segmentation model to an image mask.
 //
@@ -121,17 +121,17 @@ using ::tflite::gpu::gl::GlShader;
 //
 class TfLiteTensorsToSegmentationCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc);
+  static mediapipe::Status GetContract(CalculatorContract* cc);
 
-  absl::Status Open(CalculatorContext* cc) override;
-  absl::Status Process(CalculatorContext* cc) override;
-  absl::Status Close(CalculatorContext* cc) override;
+  mediapipe::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
+  mediapipe::Status Close(CalculatorContext* cc) override;
 
  private:
-  absl::Status LoadOptions(CalculatorContext* cc);
-  absl::Status InitGpu(CalculatorContext* cc);
-  absl::Status ProcessGpu(CalculatorContext* cc);
-  absl::Status ProcessCpu(CalculatorContext* cc);
+  mediapipe::Status LoadOptions(CalculatorContext* cc);
+  mediapipe::Status InitGpu(CalculatorContext* cc);
+  mediapipe::Status ProcessGpu(CalculatorContext* cc);
+  mediapipe::Status ProcessCpu(CalculatorContext* cc);
   void GlRender();
 
   ::mediapipe::TfLiteTensorsToSegmentationCalculatorOptions options_;
@@ -147,12 +147,12 @@ class TfLiteTensorsToSegmentationCalculator : public CalculatorBase {
   std::unique_ptr<GlProgram> mask_program_no_prev_;
   std::unique_ptr<GlBuffer> tensor_buffer_;
   GLuint upsample_program_;
-#endif  // !MEDIAPIPE_DISABLE_GPU
+#endif  //  !MEDIAPIPE_DISABLE_GPU
 };
 REGISTER_CALCULATOR(TfLiteTensorsToSegmentationCalculator);
 
 // static
-absl::Status TfLiteTensorsToSegmentationCalculator::GetContract(
+mediapipe::Status TfLiteTensorsToSegmentationCalculator::GetContract(
     CalculatorContract* cc) {
   RET_CHECK(!cc->Inputs().GetTags().empty());
   RET_CHECK(!cc->Outputs().GetTags().empty());
@@ -184,7 +184,7 @@ absl::Status TfLiteTensorsToSegmentationCalculator::GetContract(
     cc->Inputs().Tag(kSizeImageGpuTag).Set<mediapipe::GpuBuffer>();
     use_gpu |= true;
   }
-#endif  // !MEDIAPIPE_DISABLE_GPU
+#endif  //  !MEDIAPIPE_DISABLE_GPU
 
   // Outputs.
   if (cc->Outputs().HasTag(kMaskTag)) {
@@ -195,17 +195,17 @@ absl::Status TfLiteTensorsToSegmentationCalculator::GetContract(
     cc->Outputs().Tag(kMaskGpuTag).Set<mediapipe::GpuBuffer>();
     use_gpu |= true;
   }
-#endif  // !MEDIAPIPE_DISABLE_GPU
+#endif  //  !MEDIAPIPE_DISABLE_GPU
 
   if (use_gpu) {
 #if !defined(MEDIAPIPE_DISABLE_GL_COMPUTE)
     MP_RETURN_IF_ERROR(mediapipe::GlCalculatorHelper::UpdateContract(cc));
-#endif  // !MEDIAPIPE_DISABLE_GPU
+#endif  //  !MEDIAPIPE_DISABLE_GPU
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TfLiteTensorsToSegmentationCalculator::Open(
+mediapipe::Status TfLiteTensorsToSegmentationCalculator::Open(
     CalculatorContext* cc) {
   cc->SetOffset(TimestampDiff(0));
 
@@ -213,42 +213,44 @@ absl::Status TfLiteTensorsToSegmentationCalculator::Open(
     use_gpu_ = true;
 #if !defined(MEDIAPIPE_DISABLE_GL_COMPUTE)
     MP_RETURN_IF_ERROR(gpu_helper_.Open(cc));
-#endif  // !MEDIAPIPE_DISABLE_GPU
+#endif  //  !MEDIAPIPE_DISABLE_GPU
   }
 
   MP_RETURN_IF_ERROR(LoadOptions(cc));
 
   if (use_gpu_) {
 #if !defined(MEDIAPIPE_DISABLE_GL_COMPUTE)
-    MP_RETURN_IF_ERROR(gpu_helper_.RunInGlContext([this, cc]() -> absl::Status {
-      MP_RETURN_IF_ERROR(InitGpu(cc));
-      return absl::OkStatus();
-    }));
+    MP_RETURN_IF_ERROR(
+        gpu_helper_.RunInGlContext([this, cc]() -> mediapipe::Status {
+          MP_RETURN_IF_ERROR(InitGpu(cc));
+          return mediapipe::OkStatus();
+        }));
 #else
     RET_CHECK_FAIL() << "GPU processing not enabled.";
-#endif  // !MEDIAPIPE_DISABLE_GPU
+#endif  //  !MEDIAPIPE_DISABLE_GPU
   }
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TfLiteTensorsToSegmentationCalculator::Process(
+mediapipe::Status TfLiteTensorsToSegmentationCalculator::Process(
     CalculatorContext* cc) {
   if (use_gpu_) {
 #if !defined(MEDIAPIPE_DISABLE_GL_COMPUTE)
-    MP_RETURN_IF_ERROR(gpu_helper_.RunInGlContext([this, cc]() -> absl::Status {
-      MP_RETURN_IF_ERROR(ProcessGpu(cc));
-      return absl::OkStatus();
-    }));
-#endif  // !MEDIAPIPE_DISABLE_GPU
+    MP_RETURN_IF_ERROR(
+        gpu_helper_.RunInGlContext([this, cc]() -> mediapipe::Status {
+          MP_RETURN_IF_ERROR(ProcessGpu(cc));
+          return mediapipe::OkStatus();
+        }));
+#endif  //  !MEDIAPIPE_DISABLE_GPU
   } else {
     MP_RETURN_IF_ERROR(ProcessCpu(cc));
   }
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TfLiteTensorsToSegmentationCalculator::Close(
+mediapipe::Status TfLiteTensorsToSegmentationCalculator::Close(
     CalculatorContext* cc) {
 #if !defined(MEDIAPIPE_DISABLE_GL_COMPUTE)
   gpu_helper_.RunInGlContext([this] {
@@ -258,15 +260,15 @@ absl::Status TfLiteTensorsToSegmentationCalculator::Close(
     mask_program_no_prev_.reset();
     tensor_buffer_.reset();
   });
-#endif  // !MEDIAPIPE_DISABLE_GPU
+#endif  //  !MEDIAPIPE_DISABLE_GPU
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TfLiteTensorsToSegmentationCalculator::ProcessCpu(
+mediapipe::Status TfLiteTensorsToSegmentationCalculator::ProcessCpu(
     CalculatorContext* cc) {
   if (cc->Inputs().Tag(kTensorsTag).IsEmpty()) {
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
   // Get input streams.
@@ -364,17 +366,17 @@ absl::Status TfLiteTensorsToSegmentationCalculator::ProcessCpu(
   large_mask_mat.copyTo(output_mat);
   cc->Outputs().Tag(kMaskTag).Add(output_mask.release(), cc->InputTimestamp());
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 // Steps:
 // 1. receive tensor and optional previous mask
 // 2. process segmentation tensor into small mask
 // 3. upsample small mask into output mask to be same size as input image
-absl::Status TfLiteTensorsToSegmentationCalculator::ProcessGpu(
+mediapipe::Status TfLiteTensorsToSegmentationCalculator::ProcessGpu(
     CalculatorContext* cc) {
   if (cc->Inputs().Tag(kTensorsGpuTag).IsEmpty()) {
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 #if !defined(MEDIAPIPE_DISABLE_GL_COMPUTE)
   // Get input streams.
@@ -456,9 +458,9 @@ absl::Status TfLiteTensorsToSegmentationCalculator::ProcessGpu(
   // Cleanup
   input_mask_texture.Release();
   output_texture.Release();
-#endif  // !MEDIAPIPE_DISABLE_GPU
+#endif  //  !MEDIAPIPE_DISABLE_GPU
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 void TfLiteTensorsToSegmentationCalculator::GlRender() {
@@ -510,10 +512,10 @@ void TfLiteTensorsToSegmentationCalculator::GlRender() {
   glBindVertexArray(0);
   glDeleteVertexArrays(1, &vao);
   glDeleteBuffers(2, vbo);
-#endif  // !MEDIAPIPE_DISABLE_GPU
+#endif  //  !MEDIAPIPE_DISABLE_GPU
 }
 
-absl::Status TfLiteTensorsToSegmentationCalculator::LoadOptions(
+mediapipe::Status TfLiteTensorsToSegmentationCalculator::LoadOptions(
     CalculatorContext* cc) {
   // Get calculator options specified in the graph.
   options_ =
@@ -529,13 +531,14 @@ absl::Status TfLiteTensorsToSegmentationCalculator::LoadOptions(
   RET_CHECK_EQ(tensor_channels_, 2)
       << "Only 2 channel segmentation tensor currently supported";
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TfLiteTensorsToSegmentationCalculator::InitGpu(
+mediapipe::Status TfLiteTensorsToSegmentationCalculator::InitGpu(
     CalculatorContext* cc) {
 #if !defined(MEDIAPIPE_DISABLE_GL_COMPUTE)
-  MP_RETURN_IF_ERROR(gpu_helper_.RunInGlContext([this]() -> absl::Status {
+  MP_RETURN_IF_ERROR(gpu_helper_.RunInGlContext([this]()
+                                                    -> ::mediapipe::Status {
     // A shader to process a segmentation tensor into an output mask,
     // and use an optional previous mask as input.
     // Currently uses 4 channels for output,
@@ -695,11 +698,11 @@ void main() {
     glUseProgram(upsample_program_);
     glUniform1i(glGetUniformLocation(upsample_program_, "input_data"), 1);
 
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }));
-#endif  // !MEDIAPIPE_DISABLE_GPU
+#endif  //  !MEDIAPIPE_DISABLE_GPU
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 }  // namespace mediapipe

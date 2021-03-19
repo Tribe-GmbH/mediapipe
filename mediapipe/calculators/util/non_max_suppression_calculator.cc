@@ -52,7 +52,6 @@ bool RetainMaxScoringLabelOnly(Detection* detection) {
       << "Number of scores must be equal to number of detections.";
 
   std::vector<std::pair<int, float>> indexed_scores;
-  indexed_scores.reserve(detection->score_size());
   for (int k = 0; k < detection->score_size(); ++k) {
     indexed_scores.push_back(std::make_pair(k, detection->score(k)));
   }
@@ -155,7 +154,7 @@ class NonMaxSuppressionCalculator : public CalculatorBase {
   NonMaxSuppressionCalculator() = default;
   ~NonMaxSuppressionCalculator() override = default;
 
-  static absl::Status GetContract(CalculatorContract* cc) {
+  static mediapipe::Status GetContract(CalculatorContract* cc) {
     const auto& options = cc->Options<NonMaxSuppressionCalculatorOptions>();
     if (cc->Inputs().HasTag(kImageTag)) {
       cc->Inputs().Tag(kImageTag).Set<ImageFrame>();
@@ -164,10 +163,10 @@ class NonMaxSuppressionCalculator : public CalculatorBase {
       cc->Inputs().Index(k).Set<Detections>();
     }
     cc->Outputs().Index(0).Set<Detections>();
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Open(CalculatorContext* cc) override {
+  mediapipe::Status Open(CalculatorContext* cc) override {
     cc->SetOffset(TimestampDiff(0));
 
     options_ = cc->Options<NonMaxSuppressionCalculatorOptions>();
@@ -177,10 +176,10 @@ class NonMaxSuppressionCalculator : public CalculatorBase {
         << "max_num_detections=0 is not a valid value. Please choose a "
         << "positive number of you want to limit the number of output "
         << "detections, or set -1 if you do not want any limit.";
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Process(CalculatorContext* cc) override {
+  mediapipe::Status Process(CalculatorContext* cc) override {
     // Add all input detections to the same vector.
     Detections input_detections;
     for (int i = 0; i < options_.num_detection_streams(); ++i) {
@@ -200,7 +199,7 @@ class NonMaxSuppressionCalculator : public CalculatorBase {
       if (options_.return_empty_detections()) {
         cc->Outputs().Index(0).Add(new Detections(), cc->InputTimestamp());
       }
-      return absl::OkStatus();
+      return mediapipe::OkStatus();
     }
 
     // Remove all but the maximum scoring label from each input detection. This
@@ -245,7 +244,7 @@ class NonMaxSuppressionCalculator : public CalculatorBase {
 
     cc->Outputs().Index(0).Add(retained_detections, cc->InputTimestamp());
 
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
  private:

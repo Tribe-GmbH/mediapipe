@@ -66,7 +66,7 @@ namespace mediapipe {
 // analysis frame will advance from its predecessor by the same time step.
 class SpectrogramCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc) {
+  static mediapipe::Status GetContract(CalculatorContract* cc) {
     cc->Inputs().Index(0).Set<Matrix>(
         // Input stream with TimeSeriesHeader.
     );
@@ -96,34 +96,26 @@ class SpectrogramCalculator : public CalculatorBase {
         );
       }
     }
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
   // Returns FAIL if the input stream header is invalid.
-  absl::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Open(CalculatorContext* cc) override;
 
   // Outputs at most one packet consisting of a single Matrix with one or
   // more columns containing the spectral values from as many input frames
   // as are completed by the input samples.  Always returns OK.
-  absl::Status Process(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
 
   // Performs zero-padding and processing of any remaining samples
   // if pad_final_packet is set.
   // Returns OK.
-  absl::Status Close(CalculatorContext* cc) override;
+  mediapipe::Status Close(CalculatorContext* cc) override;
 
  private:
   Timestamp CurrentOutputTimestamp(CalculatorContext* cc) {
     if (use_local_timestamp_) {
-      const Timestamp now = cc->InputTimestamp();
-      if (now == Timestamp::Done()) {
-        // During Close the timestamp is not available, send an estimate.
-        return last_local_output_timestamp_ +
-               round(last_completed_frames_ * frame_step_samples() *
-                     Timestamp::kTimestampUnitsPerSecond / input_sample_rate_);
-      }
-      last_local_output_timestamp_ = now;
-      return now;
+      return cc->InputTimestamp();
     }
     return CumulativeOutputTimestamp();
   }
@@ -146,20 +138,17 @@ class SpectrogramCalculator : public CalculatorBase {
   // Convert the output of the spectrogram object into a Matrix (or an
   // Eigen::MatrixXcf if complex-valued output is requested) and pass to
   // MediaPipe output.
-  absl::Status ProcessVector(const Matrix& input_stream, CalculatorContext* cc);
+  mediapipe::Status ProcessVector(const Matrix& input_stream,
+                                  CalculatorContext* cc);
 
   // Templated function to process either real- or complex-output spectrogram.
   template <class OutputMatrixType>
-  absl::Status ProcessVectorToOutput(
+  mediapipe::Status ProcessVectorToOutput(
       const Matrix& input_stream,
       const OutputMatrixType postprocess_output_fn(const OutputMatrixType&),
       CalculatorContext* cc);
 
-  // Use the MediaPipe timestamp instead of the estimated one. Useful when the
-  // data is intermittent.
   bool use_local_timestamp_;
-  Timestamp last_local_output_timestamp_;
-
   double input_sample_rate_;
   bool pad_final_packet_;
   int frame_duration_samples_;
@@ -168,9 +157,6 @@ class SpectrogramCalculator : public CalculatorBase {
   int64 cumulative_input_samples_;
   // How many frames we've emitted, used for calculating output time stamps.
   int64 cumulative_completed_frames_;
-  // How many frames were emitted last, used for estimating the timestamp on
-  // Close when use_local_timestamp_ is true;
-  int64 last_completed_frames_;
   Timestamp initial_input_timestamp_;
   int num_input_channels_;
   // How many frequency bins we emit (=N_FFT/2 + 1).
@@ -191,7 +177,7 @@ REGISTER_CALCULATOR(SpectrogramCalculator);
 // Factor to convert ln(magnitude_squared) to deciBels = 10.0/ln(10.0).
 const float SpectrogramCalculator::kLnPowerToDb = 4.342944819032518;
 
-absl::Status SpectrogramCalculator::Open(CalculatorContext* cc) {
+mediapipe::Status SpectrogramCalculator::Open(CalculatorContext* cc) {
   SpectrogramCalculatorOptions spectrogram_options =
       cc->Options<SpectrogramCalculatorOptions>();
 
@@ -285,20 +271,11 @@ absl::Status SpectrogramCalculator::Open(CalculatorContext* cc) {
         Adopt(multichannel_output_header.release()));
   }
   cumulative_completed_frames_ = 0;
-  last_completed_frames_ = 0;
   initial_input_timestamp_ = Timestamp::Unstarted();
-  if (use_local_timestamp_) {
-    // Inform the framework that the calculator will output packets at the same
-    // timestamps as input packets to enable packet queueing optimizations. The
-    // final packet (emitted from Close()) does not follow this rule but it's
-    // sufficient that its timestamp is strictly greater than the timestamp of
-    // the previous packet.
-    cc->SetOffset(0);
-  }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status SpectrogramCalculator::Process(CalculatorContext* cc) {
+mediapipe::Status SpectrogramCalculator::Process(CalculatorContext* cc) {
   if (initial_input_timestamp_ == Timestamp::Unstarted()) {
     initial_input_timestamp_ = cc->InputTimestamp();
   }
@@ -314,7 +291,7 @@ absl::Status SpectrogramCalculator::Process(CalculatorContext* cc) {
 }
 
 template <class OutputMatrixType>
-absl::Status SpectrogramCalculator::ProcessVectorToOutput(
+mediapipe::Status SpectrogramCalculator::ProcessVectorToOutput(
     const Matrix& input_stream,
     const OutputMatrixType postprocess_output_fn(const OutputMatrixType&),
     CalculatorContext* cc) {
@@ -334,8 +311,8 @@ absl::Status SpectrogramCalculator::ProcessVectorToOutput(
 
     if (!spectrogram_generators_[channel]->ComputeSpectrogram(
             input_vector, &output_vectors)) {
-      return absl::Status(absl::StatusCode::kInternal,
-                          "Spectrogram returned failure");
+      return mediapipe::Status(mediapipe::StatusCode::kInternal,
+                               "Spectrogram returned failure");
     }
     if (channel == 0) {
       // Record the number of time frames we expect from each channel.
@@ -377,19 +354,12 @@ absl::Status SpectrogramCalculator::ProcessVectorToOutput(
           CurrentOutputTimestamp(cc));
     }
     cumulative_completed_frames_ += output_vectors.size();
-    last_completed_frames_ = output_vectors.size();
-    if (!use_local_timestamp_) {
-      // In non-local timestamp mode the timestamp of the next packet will be
-      // equal to CumulativeOutputTimestamp(). Inform the framework about this
-      // fact to enable packet queueing optimizations.
-      cc->Outputs().Index(0).SetNextTimestampBound(CumulativeOutputTimestamp());
-    }
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status SpectrogramCalculator::ProcessVector(const Matrix& input_stream,
-                                                  CalculatorContext* cc) {
+mediapipe::Status SpectrogramCalculator::ProcessVector(
+    const Matrix& input_stream, CalculatorContext* cc) {
   switch (output_type_) {
     // These blocks deliberately ignore clang-format to preserve the
     // "silhouette" of the different cases.
@@ -424,13 +394,13 @@ absl::Status SpectrogramCalculator::ProcessVector(const Matrix& input_stream,
     }
     // clang-format on
     default: {
-      return absl::Status(absl::StatusCode::kInvalidArgument,
-                          "Unrecognized spectrogram output type.");
+      return mediapipe::Status(mediapipe::StatusCode::kInvalidArgument,
+                               "Unrecognized spectrogram output type.");
     }
   }
 }
 
-absl::Status SpectrogramCalculator::Close(CalculatorContext* cc) {
+mediapipe::Status SpectrogramCalculator::Close(CalculatorContext* cc) {
   if (cumulative_input_samples_ > 0 && pad_final_packet_) {
     // We can flush any remaining samples by sending frame_step_samples - 1
     // zeros to the Process method, and letting it do its thing,
@@ -446,7 +416,7 @@ absl::Status SpectrogramCalculator::Close(CalculatorContext* cc) {
         Matrix::Zero(num_input_channels_, required_padding_samples), cc);
   }
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 }  // namespace mediapipe

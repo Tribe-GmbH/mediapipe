@@ -50,20 +50,20 @@ inline void BusySleep(absl::Duration duration) {
 
 class SlowPlusOneCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc) {
+  static mediapipe::Status GetContract(CalculatorContract* cc) {
     cc->Inputs().Index(0).Set<int>();
     cc->Outputs().Index(0).Set<int>();
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Open(CalculatorContext* cc) override {
+  mediapipe::Status Open(CalculatorContext* cc) override {
     cc->SetOffset(mediapipe::TimestampDiff(0));
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Process(CalculatorContext* cc) override {
+  mediapipe::Status Process(CalculatorContext* cc) override {
     if (cc->InputTimestamp().Value() % 4 == 0) {
-      return absl::OkStatus();
+      return mediapipe::OkStatus();
     }
 
     RandomEngine random(testing::UnitTest::GetInstance()->random_seed());
@@ -71,7 +71,7 @@ class SlowPlusOneCalculator : public CalculatorBase {
     BusySleep(absl::Milliseconds(90 + uniform_dist(random)));
     cc->Outputs().Index(0).Add(new int(cc->Inputs().Index(0).Get<int>() + 1),
                                cc->InputTimestamp());
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 };
 
@@ -124,7 +124,7 @@ TEST_F(ParallelExecutionTest, SlowPlusOneCalculatorsTest) {
     const int kTotalNums = 100;
     int fail_count = 0;
     for (int i = 0; i < kTotalNums; ++i) {
-      absl::Status status = graph.AddPacketToInputStream(
+      mediapipe::Status status = graph.AddPacketToInputStream(
           "input", Adopt(new int(i)).At(Timestamp(i)));
       if (!status.ok()) {
         ++fail_count;

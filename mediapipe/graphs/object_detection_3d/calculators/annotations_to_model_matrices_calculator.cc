@@ -37,7 +37,6 @@ namespace {
 constexpr char kAnnotationTag[] = "ANNOTATIONS";
 constexpr char kModelMatricesTag[] = "MODEL_MATRICES";
 
-using Matrix3fRM = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>;
 using Matrix4fRM = Eigen::Matrix<float, 4, 4, Eigen::RowMajor>;
 
 }  // namespace
@@ -67,14 +66,14 @@ class AnnotationsToModelMatricesCalculator : public CalculatorBase {
   AnnotationsToModelMatricesCalculator& operator=(
       const AnnotationsToModelMatricesCalculator&) = delete;
 
-  static absl::Status GetContract(CalculatorContract* cc);
+  static mediapipe::Status GetContract(CalculatorContract* cc);
 
-  absl::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Open(CalculatorContext* cc) override;
 
-  absl::Status Process(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
 
  private:
-  absl::Status GetModelMatricesForAnnotations(
+  mediapipe::Status GetModelMatricesForAnnotations(
       const FrameAnnotation& annotations,
       TimedModelMatrixProtoList* model_matrix_list);
 
@@ -84,7 +83,7 @@ class AnnotationsToModelMatricesCalculator : public CalculatorBase {
 };
 REGISTER_CALCULATOR(AnnotationsToModelMatricesCalculator);
 
-absl::Status AnnotationsToModelMatricesCalculator::GetContract(
+mediapipe::Status AnnotationsToModelMatricesCalculator::GetContract(
     CalculatorContract* cc) {
   RET_CHECK(cc->Inputs().HasTag(kAnnotationTag)) << "No input stream found.";
   if (cc->Inputs().HasTag(kAnnotationTag)) {
@@ -102,10 +101,11 @@ absl::Status AnnotationsToModelMatricesCalculator::GetContract(
   if (cc->InputSidePackets().HasTag("MODEL_TRANSFORMATION")) {
     cc->InputSidePackets().Tag("MODEL_TRANSFORMATION").Set<float[]>();
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status AnnotationsToModelMatricesCalculator::Open(CalculatorContext* cc) {
+mediapipe::Status AnnotationsToModelMatricesCalculator::Open(
+    CalculatorContext* cc) {
   RET_CHECK(cc->Inputs().HasTag(kAnnotationTag));
 
   cc->SetOffset(TimestampDiff(0));
@@ -131,10 +131,10 @@ absl::Status AnnotationsToModelMatricesCalculator::Open(CalculatorContext* cc) {
     model_transformation_.setIdentity();
   }
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status AnnotationsToModelMatricesCalculator::Process(
+mediapipe::Status AnnotationsToModelMatricesCalculator::Process(
     CalculatorContext* cc) {
   auto model_matrices = std::make_unique<TimedModelMatrixProtoList>();
 
@@ -142,66 +142,73 @@ absl::Status AnnotationsToModelMatricesCalculator::Process(
       cc->Inputs().Tag(kAnnotationTag).Get<FrameAnnotation>();
 
   if (!GetModelMatricesForAnnotations(annotations, model_matrices.get()).ok()) {
-    return absl::InvalidArgumentError("Error in GetModelMatricesForBoxes");
+    return mediapipe::InvalidArgumentError("Error in GetModelMatricesForBoxes");
   }
   cc->Outputs()
       .Tag(kModelMatricesTag)
       .Add(model_matrices.release(), cc->InputTimestamp());
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status
+mediapipe::Status
 AnnotationsToModelMatricesCalculator::GetModelMatricesForAnnotations(
     const FrameAnnotation& annotations,
     TimedModelMatrixProtoList* model_matrix_list) {
   if (model_matrix_list == nullptr) {
-    return absl::InvalidArgumentError("model_matrix_list is nullptr");
+    return mediapipe::InvalidArgumentError("model_matrix_list is nullptr");
   }
   model_matrix_list->clear_model_matrix();
 
+  Box box("category");
   for (const auto& object : annotations.annotations()) {
     TimedModelMatrixProto* model_matrix = model_matrix_list->add_model_matrix();
     model_matrix->set_id(object.object_id());
 
-    // Get object rotation, translation and scale.
-    const auto object_rotation =
-        Eigen::Map<const Matrix3fRM>(object.rotation().data());
-    const auto object_translation =
-        Eigen::Map<const Eigen::Vector3f>(object.translation().data());
-    const auto object_scale =
-        Eigen::Map<const Eigen::Vector3f>(object.scale().data());
+    // Fit a box to the original vertices to estimate the scale of the box
+    std::vector<Eigen::Vector3f> vertices;
+    for (const auto& keypoint : object.keypoints()) {
+      const auto& point = keypoint.point_3d();
+      Eigen::Vector3f p(point.x(), point.y(), point.z());
+      vertices.emplace_back(p);
+    }
+    box.Fit(vertices);
 
-    // Compose object transformation matrix.
-    Matrix4fRM object_transformation;
-    object_transformation.setIdentity();
-    object_transformation.topLeftCorner<3, 3>() = object_rotation;
-    object_transformation.topRightCorner<3, 1>() = object_translation;
+    // Re-scale the box if necessary
+    Eigen::Vector3f estimated_scale = box.GetScale();
+    vertices.clear();
+    for (const auto& keypoint : object.keypoints()) {
+      const auto& point = keypoint.point_3d();
+      Eigen::Vector3f p(point.x(), point.y(), point.z());
+      vertices.emplace_back(p);
+    }
+    box.Fit(vertices);
 
+    Matrix4fRM object_transformation = box.GetTransformation();
     Matrix4fRM model_view;
-    Matrix4fRM objectron_model;
+    Matrix4fRM pursuit_model;
     // The reference view is
     //
     // ref <<  0.,  0.,  1.,  0.,
     //        -1.,  0., 0.,  0.,
     //         0.,  -1.,  0.,  0.,
     //         0.,  0.,  0.,  1.;
-    // We have objectron_model * model = model_view, to get objectron_model:
-    // objectron_model = model_view * model^-1
+    // We have pursuit_model * model = model_view, to get pursuit_model:
+    // pursuit_model = model_view * model^-1
     // clang-format off
-    objectron_model << 1.0, 0.0, 0.0, 0.0,
-                       0.0, -1., 0.0, 0.0,
-                       0.0, 0.0, 1.0, 0.0,
-                       0.0, 0.0, 0.0, 1.0;
+    pursuit_model << 0.0, 1.0, 0.0, 0.0,
+                     1.0, 0.0, 0.0, 0.0,
+                     0.0, 0.0, 1.0, 0.0,
+                     0.0, 0.0, 0.0, 1.0;
     // clang-format on
 
     // Re-scale the CAD model to the scale of the estimated bounding box.
-    const Eigen::Vector3f scale = model_scale_.cwiseProduct(object_scale);
+    const Eigen::Vector3f scale = model_scale_.cwiseProduct(estimated_scale);
     const Matrix4fRM model =
         model_transformation_.array().colwise() * scale.homogeneous().array();
 
     // Finally compute the model_view matrix.
-    model_view = objectron_model * object_transformation * model;
+    model_view = pursuit_model * object_transformation * model;
 
     for (int i = 0; i < model_view.rows(); ++i) {
       for (int j = 0; j < model_view.cols(); ++j) {
@@ -209,7 +216,7 @@ AnnotationsToModelMatricesCalculator::GetModelMatricesForAnnotations(
       }
     }
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 }  // namespace mediapipe

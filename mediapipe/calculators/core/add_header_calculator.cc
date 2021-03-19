@@ -53,28 +53,27 @@ class AddHeaderCalculator : public Node {
 
   MEDIAPIPE_NODE_CONTRACT(kHeader, kHeaderSide, kData, kOut);
 
-  static absl::Status UpdateContract(CalculatorContract* cc) {
+  static mediapipe::Status UpdateContract(CalculatorContract* cc) {
     if (kHeader(cc).IsConnected() == kHeaderSide(cc).IsConnected()) {
-      return absl::InvalidArgumentError(
+      return mediapipe::InvalidArgumentError(
           "Header must be provided via exactly one of side input and input "
           "stream");
     }
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Open(CalculatorContext* cc) override {
+  mediapipe::Status Open(CalculatorContext* cc) override {
     const PacketBase& header =
         kHeader(cc).IsConnected() ? kHeader(cc).Header() : kHeaderSide(cc);
     if (!header.IsEmpty()) {
       kOut(cc).SetHeader(header);
     }
-    cc->SetOffset(0);
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Process(CalculatorContext* cc) override {
+  mediapipe::Status Process(CalculatorContext* cc) override {
     kOut(cc).Send(kData(cc).packet());
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 };
 

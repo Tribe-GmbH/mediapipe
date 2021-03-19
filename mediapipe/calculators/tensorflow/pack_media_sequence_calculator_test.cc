@@ -71,8 +71,9 @@ TEST_F(PackMediaSequenceCalculatorTest, PacksTwoImages) {
   cv::Mat image(2, 3, CV_8UC3, cv::Scalar(0, 0, 255));
   std::vector<uchar> bytes;
   ASSERT_TRUE(cv::imencode(".jpg", image, bytes, {80}));
+  std::string test_image_string(bytes.begin(), bytes.end());
   OpenCvImageEncoderCalculatorResults encoded_image;
-  encoded_image.set_encoded_image(bytes.data(), bytes.size());
+  encoded_image.set_encoded_image(test_image_string);
   encoded_image.set_width(2);
   encoded_image.set_height(1);
 
@@ -100,8 +101,7 @@ TEST_F(PackMediaSequenceCalculatorTest, PacksTwoImages) {
   ASSERT_EQ(num_images, mpms::GetImageEncodedSize(output_sequence));
   for (int i = 0; i < num_images; ++i) {
     ASSERT_EQ(i, mpms::GetImageTimestampAt(output_sequence, i));
-    ASSERT_EQ(encoded_image.encoded_image(),
-              mpms::GetImageEncodedAt(output_sequence, i));
+    ASSERT_EQ(test_image_string, mpms::GetImageEncodedAt(output_sequence, i));
   }
 }
 
@@ -114,8 +114,9 @@ TEST_F(PackMediaSequenceCalculatorTest, PacksTwoPrefixedImages) {
   cv::Mat image(2, 3, CV_8UC3, cv::Scalar(0, 0, 255));
   std::vector<uchar> bytes;
   ASSERT_TRUE(cv::imencode(".jpg", image, bytes, {80}));
+  std::string test_image_string(bytes.begin(), bytes.end());
   OpenCvImageEncoderCalculatorResults encoded_image;
-  encoded_image.set_encoded_image(bytes.data(), bytes.size());
+  encoded_image.set_encoded_image(test_image_string);
   encoded_image.set_width(2);
   encoded_image.set_height(1);
 
@@ -144,7 +145,7 @@ TEST_F(PackMediaSequenceCalculatorTest, PacksTwoPrefixedImages) {
   ASSERT_EQ(num_images, mpms::GetImageEncodedSize(prefix, output_sequence));
   for (int i = 0; i < num_images; ++i) {
     ASSERT_EQ(i, mpms::GetImageTimestampAt(prefix, output_sequence, i));
-    ASSERT_EQ(encoded_image.encoded_image(),
+    ASSERT_EQ(test_image_string,
               mpms::GetImageEncodedAt(prefix, output_sequence, i));
   }
 }
@@ -238,8 +239,9 @@ TEST_F(PackMediaSequenceCalculatorTest, PacksAdditionalContext) {
   cv::Mat image(2, 3, CV_8UC3, cv::Scalar(0, 0, 255));
   std::vector<uchar> bytes;
   ASSERT_TRUE(cv::imencode(".jpg", image, bytes, {80}));
+  std::string test_image_string(bytes.begin(), bytes.end());
   OpenCvImageEncoderCalculatorResults encoded_image;
-  encoded_image.set_encoded_image(bytes.data(), bytes.size());
+  encoded_image.set_encoded_image(test_image_string);
   auto image_ptr =
       ::absl::make_unique<OpenCvImageEncoderCalculatorResults>(encoded_image);
   runner_->MutableInputs()->Tag("IMAGE").packets.push_back(
@@ -432,7 +434,7 @@ TEST_F(PackMediaSequenceCalculatorTest, PacksBBoxWithoutImageDims) {
       Adopt(input_sequence.release());
 
   auto status = runner_->Run();
-  EXPECT_EQ(absl::StatusCode::kInvalidArgument, status.code());
+  EXPECT_EQ(mediapipe::StatusCode::kInvalidArgument, status.code());
 }
 
 TEST_F(PackMediaSequenceCalculatorTest, PacksBBoxWithImages) {
@@ -478,8 +480,9 @@ TEST_F(PackMediaSequenceCalculatorTest, PacksBBoxWithImages) {
   cv::Mat image(height, width, CV_8UC3, cv::Scalar(0, 0, 255));
   std::vector<uchar> bytes;
   ASSERT_TRUE(cv::imencode(".jpg", image, bytes, {80}));
+  std::string test_image_string(bytes.begin(), bytes.end());
   OpenCvImageEncoderCalculatorResults encoded_image;
-  encoded_image.set_encoded_image(bytes.data(), bytes.size());
+  encoded_image.set_encoded_image(test_image_string);
   encoded_image.set_width(width);
   encoded_image.set_height(height);
 
@@ -691,7 +694,7 @@ TEST_F(PackMediaSequenceCalculatorTest, MissingStreamNotOK) {
   runner_->MutableSidePackets()->Tag("SEQUENCE_EXAMPLE") =
       Adopt(input_sequence.release());
 
-  absl::Status status = runner_->Run();
+  ::mediapipe::Status status = runner_->Run();
   EXPECT_FALSE(status.ok());
 }
 
@@ -791,8 +794,9 @@ TEST_F(PackMediaSequenceCalculatorTest, TestReconcilingAnnotations) {
   cv::Mat image(2, 3, CV_8UC3, cv::Scalar(0, 0, 255));
   std::vector<uchar> bytes;
   ASSERT_TRUE(cv::imencode(".jpg", image, bytes, {80}));
+  std::string test_image_string(bytes.begin(), bytes.end());
   OpenCvImageEncoderCalculatorResults encoded_image;
-  encoded_image.set_encoded_image(bytes.data(), bytes.size());
+  encoded_image.set_encoded_image(test_image_string);
   encoded_image.set_width(2);
   encoded_image.set_height(1);
 
@@ -842,8 +846,9 @@ TEST_F(PackMediaSequenceCalculatorTest, TestOverwritingAndReconciling) {
   cv::Mat image(2, 3, CV_8UC3, cv::Scalar(0, 0, 255));
   std::vector<uchar> bytes;
   ASSERT_TRUE(cv::imencode(".jpg", image, bytes, {80}));
+  std::string test_image_string(bytes.begin(), bytes.end());
   OpenCvImageEncoderCalculatorResults encoded_image;
-  encoded_image.set_encoded_image(bytes.data(), bytes.size());
+  encoded_image.set_encoded_image(test_image_string);
   int height = 2;
   int width = 2;
   encoded_image.set_width(width);

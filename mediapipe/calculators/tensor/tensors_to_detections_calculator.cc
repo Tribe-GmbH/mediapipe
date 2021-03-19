@@ -134,27 +134,26 @@ class TensorsToDetectionsCalculator : public Node {
       "ANCHORS"};
   static constexpr Output<std::vector<Detection>> kOutDetections{"DETECTIONS"};
   MEDIAPIPE_NODE_CONTRACT(kInTensors, kInAnchors, kOutDetections);
-  static absl::Status UpdateContract(CalculatorContract* cc);
+  static mediapipe::Status UpdateContract(CalculatorContract* cc);
 
-  absl::Status Open(CalculatorContext* cc) override;
-  absl::Status Process(CalculatorContext* cc) override;
-  absl::Status Close(CalculatorContext* cc) override;
+  mediapipe::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
+  mediapipe::Status Close(CalculatorContext* cc) override;
 
  private:
-  absl::Status ProcessCPU(CalculatorContext* cc,
-                          std::vector<Detection>* output_detections);
-  absl::Status ProcessGPU(CalculatorContext* cc,
-                          std::vector<Detection>* output_detections);
+  mediapipe::Status ProcessCPU(CalculatorContext* cc,
+                               std::vector<Detection>* output_detections);
+  mediapipe::Status ProcessGPU(CalculatorContext* cc,
+                               std::vector<Detection>* output_detections);
 
-  absl::Status LoadOptions(CalculatorContext* cc);
-  absl::Status GpuInit(CalculatorContext* cc);
-  absl::Status DecodeBoxes(const float* raw_boxes,
-                           const std::vector<Anchor>& anchors,
-                           std::vector<float>* boxes);
-  absl::Status ConvertToDetections(const float* detection_boxes,
-                                   const float* detection_scores,
-                                   const int* detection_classes,
-                                   std::vector<Detection>* output_detections);
+  mediapipe::Status LoadOptions(CalculatorContext* cc);
+  mediapipe::Status GpuInit(CalculatorContext* cc);
+  mediapipe::Status DecodeBoxes(const float* raw_boxes,
+                                const std::vector<Anchor>& anchors,
+                                std::vector<float>* boxes);
+  mediapipe::Status ConvertToDetections(
+      const float* detection_boxes, const float* detection_scores,
+      const int* detection_classes, std::vector<Detection>* output_detections);
   Detection ConvertToDetection(float box_ymin, float box_xmin, float box_ymax,
                                float box_xmax, float score, int class_id,
                                bool flip_vertically);
@@ -180,13 +179,12 @@ class TensorsToDetectionsCalculator : public Node {
   std::unique_ptr<Tensor> decoded_boxes_buffer_;
   std::unique_ptr<Tensor> scored_boxes_buffer_;
 
-  bool gpu_inited_ = false;
   bool gpu_input_ = false;
   bool anchors_init_ = false;
 };
 MEDIAPIPE_REGISTER_NODE(TensorsToDetectionsCalculator);
 
-absl::Status TensorsToDetectionsCalculator::UpdateContract(
+mediapipe::Status TensorsToDetectionsCalculator::UpdateContract(
     CalculatorContract* cc) {
   if (CanUseGpu()) {
 #ifndef MEDIAPIPE_DISABLE_GL_COMPUTE
@@ -196,10 +194,10 @@ absl::Status TensorsToDetectionsCalculator::UpdateContract(
 #endif  // !defined(MEDIAPIPE_DISABLE_GL_COMPUTE)
   }
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TensorsToDetectionsCalculator::Open(CalculatorContext* cc) {
+mediapipe::Status TensorsToDetectionsCalculator::Open(CalculatorContext* cc) {
   MP_RETURN_IF_ERROR(LoadOptions(cc));
 
   if (CanUseGpu()) {
@@ -209,12 +207,14 @@ absl::Status TensorsToDetectionsCalculator::Open(CalculatorContext* cc) {
     gpu_helper_ = [[MPPMetalHelper alloc] initWithCalculatorContext:cc];
     RET_CHECK(gpu_helper_);
 #endif  // !defined(MEDIAPIPE_DISABLE_GL_COMPUTE)
+    MP_RETURN_IF_ERROR(GpuInit(cc));
   }
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TensorsToDetectionsCalculator::Process(CalculatorContext* cc) {
+mediapipe::Status TensorsToDetectionsCalculator::Process(
+    CalculatorContext* cc) {
   auto output_detections = absl::make_unique<std::vector<Detection>>();
   bool gpu_processing = false;
   if (CanUseGpu()) {
@@ -229,20 +229,16 @@ absl::Status TensorsToDetectionsCalculator::Process(CalculatorContext* cc) {
   }
 
   if (gpu_processing) {
-    if (!gpu_inited_) {
-      MP_RETURN_IF_ERROR(GpuInit(cc));
-      gpu_inited_ = true;
-    }
     MP_RETURN_IF_ERROR(ProcessGPU(cc, output_detections.get()));
   } else {
     MP_RETURN_IF_ERROR(ProcessCPU(cc, output_detections.get()));
   }
 
   kOutDetections(cc).Send(std::move(output_detections));
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TensorsToDetectionsCalculator::ProcessCPU(
+mediapipe::Status TensorsToDetectionsCalculator::ProcessCPU(
     CalculatorContext* cc, std::vector<Detection>* output_detections) {
   const auto& input_tensors = *kInTensors(cc);
 
@@ -279,7 +275,7 @@ absl::Status TensorsToDetectionsCalculator::ProcessCPU(
       } else if (!kInAnchors(cc).IsEmpty()) {
         anchors_ = *kInAnchors(cc);
       } else {
-        return absl::UnavailableError("No anchor data available.");
+        return mediapipe::UnavailableError("No anchor data available.");
       }
       anchors_init_ = true;
     }
@@ -366,10 +362,10 @@ absl::Status TensorsToDetectionsCalculator::ProcessCPU(
                                            detection_classes.data(),
                                            output_detections));
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TensorsToDetectionsCalculator::ProcessGPU(
+mediapipe::Status TensorsToDetectionsCalculator::ProcessGPU(
     CalculatorContext* cc, std::vector<Detection>* output_detections) {
   const auto& input_tensors = *kInTensors(cc);
   RET_CHECK_GE(input_tensors.size(), 2);
@@ -377,7 +373,7 @@ absl::Status TensorsToDetectionsCalculator::ProcessGPU(
 
   MP_RETURN_IF_ERROR(gpu_helper_.RunInGlContext([this, &input_tensors, &cc,
                                                  &output_detections]()
-                                                    -> absl::Status {
+                                                    -> mediapipe::Status {
     if (!anchors_init_) {
       if (input_tensors.size() == kNumInputTensorsWithAnchors) {
         auto read_view = input_tensors[2].GetOpenGlBufferReadView();
@@ -392,7 +388,7 @@ absl::Status TensorsToDetectionsCalculator::ProcessGPU(
         auto raw_anchors = anchors_view.buffer<float>();
         ConvertAnchorsToRawValues(anchors, num_boxes_, raw_anchors);
       } else {
-        return absl::UnavailableError("No anchor data available.");
+        return mediapipe::UnavailableError("No anchor data available.");
       }
       anchors_init_ = true;
     }
@@ -418,7 +414,7 @@ absl::Status TensorsToDetectionsCalculator::ProcessGPU(
       glUseProgram(score_program_);
       glDispatchCompute(num_boxes_, 1, 1);
     }
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }));
 
   // TODO: b/138851969. Is it possible to output a float vector
@@ -463,7 +459,7 @@ absl::Status TensorsToDetectionsCalculator::ProcessGPU(
       ConvertAnchorsToRawValues(anchors, num_boxes_,
                                 raw_anchors_view.buffer<float>());
     } else {
-      return absl::UnavailableError("No anchor data available.");
+      return mediapipe::UnavailableError("No anchor data available.");
     }
     anchors_init_ = true;
   }
@@ -524,10 +520,10 @@ absl::Status TensorsToDetectionsCalculator::ProcessGPU(
 #else
   LOG(ERROR) << "GPU input on non-Android not supported yet.";
 #endif  // !defined(MEDIAPIPE_DISABLE_GL_COMPUTE)
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TensorsToDetectionsCalculator::Close(CalculatorContext* cc) {
+mediapipe::Status TensorsToDetectionsCalculator::Close(CalculatorContext* cc) {
 #ifndef MEDIAPIPE_DISABLE_GL_COMPUTE
   gpu_helper_.RunInGlContext([this] {
     decoded_boxes_buffer_ = nullptr;
@@ -544,10 +540,11 @@ absl::Status TensorsToDetectionsCalculator::Close(CalculatorContext* cc) {
   score_program_ = nil;
 #endif  // !defined(MEDIAPIPE_DISABLE_GL_COMPUTE)
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TensorsToDetectionsCalculator::LoadOptions(CalculatorContext* cc) {
+mediapipe::Status TensorsToDetectionsCalculator::LoadOptions(
+    CalculatorContext* cc) {
   // Get calculator options specified in the graph.
   options_ = cc->Options<::mediapipe::TensorsToDetectionsCalculatorOptions>();
   RET_CHECK(options_.has_num_classes());
@@ -570,10 +567,10 @@ absl::Status TensorsToDetectionsCalculator::LoadOptions(CalculatorContext* cc) {
     ignore_classes_.insert(options_.ignore_classes(i));
   }
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TensorsToDetectionsCalculator::DecodeBoxes(
+mediapipe::Status TensorsToDetectionsCalculator::DecodeBoxes(
     const float* raw_boxes, const std::vector<Anchor>& anchors,
     std::vector<float>* boxes) {
   for (int i = 0; i < num_boxes_; ++i) {
@@ -634,10 +631,10 @@ absl::Status TensorsToDetectionsCalculator::DecodeBoxes(
     }
   }
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TensorsToDetectionsCalculator::ConvertToDetections(
+mediapipe::Status TensorsToDetectionsCalculator::ConvertToDetections(
     const float* detection_boxes, const float* detection_scores,
     const int* detection_classes, std::vector<Detection>* output_detections) {
   for (int i = 0; i < num_boxes_; ++i) {
@@ -674,7 +671,7 @@ absl::Status TensorsToDetectionsCalculator::ConvertToDetections(
     }
     output_detections->emplace_back(detection);
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 Detection TensorsToDetectionsCalculator::ConvertToDetection(
@@ -697,9 +694,10 @@ Detection TensorsToDetectionsCalculator::ConvertToDetection(
   return detection;
 }
 
-absl::Status TensorsToDetectionsCalculator::GpuInit(CalculatorContext* cc) {
+mediapipe::Status TensorsToDetectionsCalculator::GpuInit(
+    CalculatorContext* cc) {
 #ifndef MEDIAPIPE_DISABLE_GL_COMPUTE
-  MP_RETURN_IF_ERROR(gpu_helper_.RunInGlContext([this]() -> absl::Status {
+  MP_RETURN_IF_ERROR(gpu_helper_.RunInGlContext([this]() -> mediapipe::Status {
     // A shader to decode detection boxes.
     const std::string decode_src = absl::Substitute(
         R"( #version 310 es
@@ -803,14 +801,7 @@ void main() {
     glCompileShader(shader);
     GLint compiled = GL_FALSE;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
-    RET_CHECK(compiled == GL_TRUE) << "Shader compilation error: " << [shader] {
-      GLint length;
-      glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
-      std::string str;
-      str.reserve(length);
-      glGetShaderInfoLog(shader, length, nullptr, str.data());
-      return str;
-    }();
+    RET_CHECK(compiled == GL_TRUE);
     decode_program_ = glCreateProgram();
     glAttachShader(decode_program_, shader);
     glDeleteShader(shader);
@@ -919,7 +910,7 @@ void main() {
     scored_boxes_buffer_ = absl::make_unique<Tensor>(
         Tensor::ElementType::kFloat32, Tensor::Shape{1, num_boxes_ * 2});
 
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }));
 
 #elif MEDIAPIPE_METAL_ENABLED
@@ -1137,7 +1128,7 @@ kernel void scoreKernel(
 
 #endif  // !defined(MEDIAPIPE_DISABLE_GL_COMPUTE)
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 }  // namespace api2

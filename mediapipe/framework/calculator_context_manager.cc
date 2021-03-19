@@ -34,8 +34,9 @@ void CalculatorContextManager::Initialize(
   calculator_run_in_parallel_ = calculator_run_in_parallel;
 }
 
-absl::Status CalculatorContextManager::PrepareForRun(
-    std::function<absl::Status(CalculatorContext*)> setup_shards_callback) {
+mediapipe::Status CalculatorContextManager::PrepareForRun(
+    std::function<mediapipe::Status(CalculatorContext*)>
+        setup_shards_callback) {
   setup_shards_callback_ = std::move(setup_shards_callback);
   default_context_ = absl::make_unique<CalculatorContext>(
       calculator_state_, input_tag_map_, output_tag_map_);

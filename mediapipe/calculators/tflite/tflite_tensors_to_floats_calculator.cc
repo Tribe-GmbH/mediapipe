@@ -38,15 +38,15 @@ namespace mediapipe {
 // }
 class TfLiteTensorsToFloatsCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc);
+  static mediapipe::Status GetContract(CalculatorContract* cc);
 
-  absl::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Open(CalculatorContext* cc) override;
 
-  absl::Status Process(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
 };
 REGISTER_CALCULATOR(TfLiteTensorsToFloatsCalculator);
 
-absl::Status TfLiteTensorsToFloatsCalculator::GetContract(
+mediapipe::Status TfLiteTensorsToFloatsCalculator::GetContract(
     CalculatorContract* cc) {
   RET_CHECK(cc->Inputs().HasTag("TENSORS"));
   RET_CHECK(cc->Outputs().HasTag("FLOATS") || cc->Outputs().HasTag("FLOAT"));
@@ -59,16 +59,17 @@ absl::Status TfLiteTensorsToFloatsCalculator::GetContract(
     cc->Outputs().Tag("FLOAT").Set<float>();
   }
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TfLiteTensorsToFloatsCalculator::Open(CalculatorContext* cc) {
+mediapipe::Status TfLiteTensorsToFloatsCalculator::Open(CalculatorContext* cc) {
   cc->SetOffset(TimestampDiff(0));
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TfLiteTensorsToFloatsCalculator::Process(CalculatorContext* cc) {
+mediapipe::Status TfLiteTensorsToFloatsCalculator::Process(
+    CalculatorContext* cc) {
   RET_CHECK(!cc->Inputs().Tag("TENSORS").IsEmpty());
 
   const auto& input_tensors =
@@ -96,6 +97,6 @@ absl::Status TfLiteTensorsToFloatsCalculator::Process(CalculatorContext* cc) {
                                     cc->InputTimestamp());
   }
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 }  // namespace mediapipe

@@ -57,26 +57,26 @@ namespace mediapipe {
 // }
 class PacketPresenceCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc) {
+  static mediapipe::Status GetContract(CalculatorContract* cc) {
     cc->Inputs().Tag("PACKET").SetAny();
     cc->Outputs().Tag("PRESENCE").Set<bool>();
     // Process() function is invoked in response to input stream timestamp
     // bound updates.
     cc->SetProcessTimestampBounds(true);
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Open(CalculatorContext* cc) override {
+  mediapipe::Status Open(CalculatorContext* cc) override {
     cc->SetOffset(TimestampDiff(0));
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Process(CalculatorContext* cc) final {
+  mediapipe::Status Process(CalculatorContext* cc) final {
     cc->Outputs()
         .Tag("PRESENCE")
         .AddPacket(MakePacket<bool>(!cc->Inputs().Tag("PACKET").IsEmpty())
                        .At(cc->InputTimestamp()));
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 };
 REGISTER_CALCULATOR(PacketPresenceCalculator);

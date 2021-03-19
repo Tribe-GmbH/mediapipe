@@ -42,10 +42,10 @@ class GlSurfaceSinkCalculator : public CalculatorBase {
   GlSurfaceSinkCalculator() : initialized_(false) {}
   ~GlSurfaceSinkCalculator() override;
 
-  static absl::Status GetContract(CalculatorContract* cc);
+  static ::mediapipe::Status GetContract(CalculatorContract* cc);
 
-  absl::Status Open(CalculatorContext* cc) override;
-  absl::Status Process(CalculatorContext* cc) override;
+  ::mediapipe::Status Open(CalculatorContext* cc) override;
+  ::mediapipe::Status Process(CalculatorContext* cc) override;
 
  private:
   GlCalculatorHelper helper_;
@@ -57,7 +57,8 @@ class GlSurfaceSinkCalculator : public CalculatorBase {
 REGISTER_CALCULATOR(GlSurfaceSinkCalculator);
 
 // static
-absl::Status GlSurfaceSinkCalculator::GetContract(CalculatorContract* cc) {
+::mediapipe::Status GlSurfaceSinkCalculator::GetContract(
+    CalculatorContract* cc) {
   TagOrIndex(&(cc->Inputs()), "VIDEO", 0).Set<GpuBuffer>();
   cc->InputSidePackets()
       .Tag("SURFACE")
@@ -67,7 +68,7 @@ absl::Status GlSurfaceSinkCalculator::GetContract(CalculatorContract* cc) {
   return GlCalculatorHelper::UpdateContract(cc);
 }
 
-absl::Status GlSurfaceSinkCalculator::Open(CalculatorContext* cc) {
+::mediapipe::Status GlSurfaceSinkCalculator::Open(CalculatorContext* cc) {
   surface_holder_ = cc->InputSidePackets()
                         .Tag("SURFACE")
                         .Get<std::unique_ptr<EglSurfaceHolder>>()
@@ -81,13 +82,13 @@ absl::Status GlSurfaceSinkCalculator::Open(CalculatorContext* cc) {
   return helper_.Open(cc);
 }
 
-absl::Status GlSurfaceSinkCalculator::Process(CalculatorContext* cc) {
-  return helper_.RunInGlContext([this, &cc]() -> absl::Status {
+::mediapipe::Status GlSurfaceSinkCalculator::Process(CalculatorContext* cc) {
+  return helper_.RunInGlContext([this, &cc]() -> ::mediapipe::Status {
     absl::MutexLock lock(&surface_holder_->mutex);
     EGLSurface surface = surface_holder_->surface;
     if (surface == EGL_NO_SURFACE) {
       LOG_EVERY_N(INFO, 300) << "GlSurfaceSinkCalculator: no surface";
-      return absl::OkStatus();
+      return ::mediapipe::OkStatus();
     }
 
     const auto& input = TagOrIndex(cc->Inputs(), "VIDEO", 0).Get<GpuBuffer>();
@@ -138,7 +139,7 @@ absl::Status GlSurfaceSinkCalculator::Process(CalculatorContext* cc) {
     RET_CHECK(success) << "failed to restore old surface";
 
     src.Release();
-    return absl::OkStatus();
+    return ::mediapipe::OkStatus();
   });
 }
 

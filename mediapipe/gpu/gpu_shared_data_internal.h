@@ -42,7 +42,8 @@ namespace mediapipe {
 // TODO: rename to GpuService or GpuManager or something.
 class GpuResources {
  public:
-  using StatusOrGpuResources = absl::StatusOr<std::shared_ptr<GpuResources>>;
+  using StatusOrGpuResources =
+      ::mediapipe::StatusOr<std::shared_ptr<GpuResources>>;
 
   static StatusOrGpuResources Create();
   static StatusOrGpuResources Create(PlatformGlContext external_context);
@@ -68,7 +69,7 @@ class GpuResources {
   MPPGraphGPUData* ios_gpu_data();
 #endif  // defined(__APPLE__)§
 
-  absl::Status PrepareGpuNode(CalculatorNode* node);
+  mediapipe::Status PrepareGpuNode(CalculatorNode* node);
 
   // If the node requires custom GPU executors in the current configuration,
   // returns the executor's names and the executors themselves.
@@ -123,7 +124,7 @@ struct GpuSharedData {
     auto status_or_resources = GpuResources::Create(external_context);
     MEDIAPIPE_CHECK_OK(status_or_resources.status())
         << ": could not create GpuResources";
-    return std::move(status_or_resources).value();
+    return std::move(status_or_resources).ValueOrDie();
   }
 };
 

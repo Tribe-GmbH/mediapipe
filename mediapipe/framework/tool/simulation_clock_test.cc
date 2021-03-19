@@ -177,19 +177,19 @@ TEST_F(SimulationClockTest, DuplicateWakeTimes) {
 }
 
 // A Calculator::Process callback function.
-typedef std::function<absl::Status(const InputStreamShardSet&,
-                                   OutputStreamShardSet*)>
+typedef std::function<mediapipe::Status(const InputStreamShardSet&,
+                                        OutputStreamShardSet*)>
     ProcessFunction;
 
 // A testing callback function that passes through all packets.
-absl::Status PassThrough(const InputStreamShardSet& inputs,
-                         OutputStreamShardSet* outputs) {
+mediapipe::Status PassThrough(const InputStreamShardSet& inputs,
+                              OutputStreamShardSet* outputs) {
   for (int i = 0; i < inputs.NumEntries(); ++i) {
     if (!inputs.Index(i).Value().IsEmpty()) {
       outputs->Index(i).AddPacket(inputs.Index(i).Value());
     }
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 // This test shows sim clock synchronizing a bunch of parallel tasks.
@@ -267,7 +267,7 @@ TEST_F(SimulationClockTest, DestroyClock) {
     if (++input_count < 4) {
       outputs->Index(0).AddPacket(
           MakePacket<uint64>(input_count).At(Timestamp(input_count)));
-      return absl::OkStatus();
+      return ::mediapipe::OkStatus();
     } else {
       return tool::StatusStop();
     }
@@ -279,7 +279,7 @@ TEST_F(SimulationClockTest, DestroyClock) {
   };
 
   std::vector<Packet> out_packets;
-  absl::Status status;
+  ::mediapipe::Status status;
   {
     CalculatorGraph graph;
     auto executor = std::make_shared<SimulationClockExecutor>(4);

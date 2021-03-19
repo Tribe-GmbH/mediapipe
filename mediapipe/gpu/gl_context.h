@@ -29,7 +29,6 @@
 #include "mediapipe/framework/port/threadpool.h"
 #include "mediapipe/framework/timestamp.h"
 #include "mediapipe/gpu/gl_base.h"
-#include "mediapipe/gpu/gpu_buffer_format.h"
 
 #ifdef __APPLE__
 #include <CoreVideo/CoreVideo.h>
@@ -65,7 +64,7 @@ struct EAGLContext;
 namespace mediapipe {
 
 typedef std::function<void()> GlVoidFunction;
-typedef std::function<absl::Status()> GlStatusFunction;
+typedef std::function<::mediapipe::Status()> GlStatusFunction;
 
 class GlContext;
 
@@ -142,9 +141,10 @@ constexpr PlatformGlContext kPlatformGlContextNone = nil;
 // - Managing the interaction between threads and GL contexts.
 // - Managing synchronization between different GL contexts.
 //
+// See go/mediapipe-gl-context for details.
 class GlContext : public std::enable_shared_from_this<GlContext> {
  public:
-  using StatusOrGlContext = absl::StatusOr<std::shared_ptr<GlContext>>;
+  using StatusOrGlContext = ::mediapipe::StatusOr<std::shared_ptr<GlContext>>;
   // Creates a GlContext.
   //
   // The first argument (which can be a GlContext, or a platform-specific type)
@@ -180,8 +180,8 @@ class GlContext : public std::enable_shared_from_this<GlContext> {
 
   // Executes a function in the GL context. Waits for the
   // function's execution to be complete before returning to the caller.
-  absl::Status Run(GlStatusFunction gl_func, int node_id = -1,
-                   Timestamp input_timestamp = Timestamp::Unset());
+  ::mediapipe::Status Run(GlStatusFunction gl_func, int node_id = -1,
+                          Timestamp input_timestamp = Timestamp::Unset());
 
   // Like Run, but does not wait.
   void RunWithoutWaiting(GlVoidFunction gl_func);
@@ -237,10 +237,6 @@ class GlContext : public std::enable_shared_from_this<GlContext> {
   static bool ParseGlVersion(absl::string_view version_string, GLint* major,
                              GLint* minor);
 
-  // Returns a GlVersion code used with GpuBufferFormat.
-  // TODO: make this more generally applicable.
-  GlVersion GetGlVersion() const;
-
   // Simple query for GL extension support; only valid after GlContext has
   // finished its initialization successfully.
   bool HasGlExtension(absl::string_view extension) const;
@@ -257,12 +253,12 @@ class GlContext : public std::enable_shared_from_this<GlContext> {
   // Implementation note: we cannot use a std::function<void(void)> argument
   // here, because that would break passing in a lambda that returns a status;
   // e.g.:
-  //   RunInGlContext([]() -> absl::Status { ... });
+  //   RunInGlContext([]() -> ::mediapipe::Status { ... });
   //
   // The reason is that std::function<void(...)> allows the implicit conversion
   // of a callable with any result type, as long as the argument types match.
   // As a result, the above lambda would be implicitly convertible to both
-  // std::function<absl::Status(void)> and std::function<void(void)>, and
+  // std::function<::mediapipe::Status(void)> and std::function<void(void)>, and
   // the invocation would be ambiguous.
   //
   // Therefore, instead of using std::function<void(void)>, we use a template
@@ -272,7 +268,7 @@ class GlContext : public std::enable_shared_from_this<GlContext> {
   void Run(T f) {
     Run([f] {
       f();
-      return absl::OkStatus();
+      return ::mediapipe::OkStatus();
     }).IgnoreError();
   }
 
@@ -288,27 +284,29 @@ class GlContext : public std::enable_shared_from_this<GlContext> {
   GlContext();
 
 #if defined(__EMSCRIPTEN__)
-  absl::Status CreateContext(EMSCRIPTEN_WEBGL_CONTEXT_HANDLE share_context);
-  absl::Status CreateContextInternal(
+  ::mediapipe::Status CreateContext(
+      EMSCRIPTEN_WEBGL_CONTEXT_HANDLE share_context);
+  ::mediapipe::Status CreateContextInternal(
       EMSCRIPTEN_WEBGL_CONTEXT_HANDLE share_context, int webgl_version);
 
   EMSCRIPTEN_WEBGL_CONTEXT_HANDLE context_ = 0;
   EmscriptenWebGLContextAttributes attrs_;
 #elif HAS_EGL
-  absl::Status CreateContext(EGLContext share_context);
-  absl::Status CreateContextInternal(EGLContext share_context, int gl_version);
+  ::mediapipe::Status CreateContext(EGLContext share_context);
+  ::mediapipe::Status CreateContextInternal(EGLContext share_context,
+                                            int gl_version);
 
   EGLDisplay display_ = EGL_NO_DISPLAY;
   EGLConfig config_;
   EGLSurface surface_ = EGL_NO_SURFACE;
   EGLContext context_ = EGL_NO_CONTEXT;
 #elif HAS_EAGL
-  absl::Status CreateContext(EAGLSharegroup* sharegroup);
+  ::mediapipe::Status CreateContext(EAGLSharegroup* sharegroup);
 
   EAGLContext* context_;
   CFHolder<CVOpenGLESTextureCacheRef> texture_cache_;
 #elif HAS_NSGL
-  absl::Status CreateContext(NSOpenGLContext* share_context);
+  ::mediapipe::Status CreateContext(NSOpenGLContext* share_context);
 
   NSOpenGLContext* context_;
   NSOpenGLPixelFormat* pixel_format_;
@@ -337,16 +335,16 @@ class GlContext : public std::enable_shared_from_this<GlContext> {
 #endif  // HAS_EGL
   };
 
-  absl::Status FinishInitialization(bool create_thread);
+  ::mediapipe::Status FinishInitialization(bool create_thread);
 
   // This wraps a thread_local.
   static std::weak_ptr<GlContext>& CurrentContext();
 
-  static absl::Status SwitchContext(ContextBinding* old_context,
-                                    const ContextBinding& new_context);
+  static ::mediapipe::Status SwitchContext(ContextBinding* old_context,
+                                           const ContextBinding& new_context);
 
-  absl::Status EnterContext(ContextBinding* previous_context);
-  absl::Status ExitContext(const ContextBinding* previous_context);
+  ::mediapipe::Status EnterContext(ContextBinding* previous_context);
+  ::mediapipe::Status ExitContext(const ContextBinding* previous_context);
   void DestroyContext();
 
   bool HasContext() const;
@@ -365,13 +363,13 @@ class GlContext : public std::enable_shared_from_this<GlContext> {
   bool CheckForGlErrors(bool force);
 
   void LogUncheckedGlErrors(bool had_gl_errors);
-  absl::Status GetGlExtensions();
-  absl::Status GetGlExtensionsCompat();
+  ::mediapipe::Status GetGlExtensions();
+  ::mediapipe::Status GetGlExtensionsCompat();
 
   // Make the context current, run gl_func, and restore the previous context.
   // Internal helper only; callers should use Run or RunWithoutWaiting instead,
   // which delegates to the dedicated thread if required.
-  absl::Status SwitchContextAndRun(GlStatusFunction gl_func);
+  ::mediapipe::Status SwitchContextAndRun(GlStatusFunction gl_func);
 
   // The following ContextBinding functions have platform-specific
   // implementations.
@@ -382,7 +380,7 @@ class GlContext : public std::enable_shared_from_this<GlContext> {
   // context is current on this thread.
   static void GetCurrentContextBinding(ContextBinding* binding);
   // Makes the context described by new_context current on this thread.
-  static absl::Status SetCurrentContextBinding(
+  static ::mediapipe::Status SetCurrentContextBinding(
       const ContextBinding& new_context);
 
   // If not null, a dedicated thread used to execute tasks on this context.
@@ -416,13 +414,6 @@ class GlContext : public std::enable_shared_from_this<GlContext> {
 
   std::unique_ptr<mediapipe::GlProfilingHelper> profiling_helper_ = nullptr;
 };
-
-// For backward compatibility. TODO: migrate remaining callers.
-ABSL_DEPRECATED(
-    "Prefer passing an explicit GlVersion argument (use "
-    "GlContext::GetGlVersion)")
-const GlTextureInfo& GlTextureInfoForGpuBufferFormat(GpuBufferFormat format,
-                                                     int plane);
 
 }  // namespace mediapipe
 #endif  // MEDIAPIPE_GPU_GL_CONTEXT_H_

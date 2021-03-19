@@ -62,8 +62,9 @@ cc_library(
         ":advanced_proto_lite",
         ":core_proto",
         "//mediapipe/framework:port",
-        "@com_google_protobuf//:protobuf",
-    ],
+    ] + select({
+        "//conditions:default": ["@com_google_protobuf//:protobuf"],
+    }),
 )
 
 cc_library(
@@ -76,8 +77,9 @@ cc_library(
     deps = [
         ":core_proto",
         "//mediapipe/framework:port",
-        "@com_google_protobuf//:protobuf",
-    ],
+    ] + select({
+        "//conditions:default": ["@com_google_protobuf//:protobuf"],
+    }),
 )
 
 cc_library(
@@ -96,8 +98,8 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "//mediapipe/framework:port",
         "//third_party:glog",
-        "@com_google_absl//absl/flags:flag",
     ],
 )
 
@@ -110,8 +112,9 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "//mediapipe/framework:port",
-        "@com_google_protobuf//:protobuf",
-    ],
+    ] + select({
+        "//conditions:default": ["@com_google_protobuf//:protobuf"],
+    }),
 )
 
 cc_library(
@@ -392,7 +395,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "//mediapipe/framework:port",
-        "@com_google_absl//absl/status:statusor",
+        "//mediapipe/framework/deps:statusor",
     ],
 )
 

@@ -52,18 +52,18 @@ namespace mediapipe {
 // }
 class FrameAnnotationTrackerCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc);
+  static mediapipe::Status GetContract(CalculatorContract* cc);
 
-  absl::Status Open(CalculatorContext* cc) override;
-  absl::Status Process(CalculatorContext* cc) override;
-  absl::Status Close(CalculatorContext* cc) override;
+  mediapipe::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
+  mediapipe::Status Close(CalculatorContext* cc) override;
 
  private:
   std::unique_ptr<FrameAnnotationTracker> frame_annotation_tracker_;
 };
 REGISTER_CALCULATOR(FrameAnnotationTrackerCalculator);
 
-absl::Status FrameAnnotationTrackerCalculator::GetContract(
+mediapipe::Status FrameAnnotationTrackerCalculator::GetContract(
     CalculatorContract* cc) {
   RET_CHECK(!cc->Inputs().GetTags().empty());
   RET_CHECK(!cc->Outputs().GetTags().empty());
@@ -80,17 +80,19 @@ absl::Status FrameAnnotationTrackerCalculator::GetContract(
   if (cc->Outputs().HasTag(kOutputCancelObjectIdTag)) {
     cc->Outputs().Tag(kOutputCancelObjectIdTag).Set<int>();
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status FrameAnnotationTrackerCalculator::Open(CalculatorContext* cc) {
+mediapipe::Status FrameAnnotationTrackerCalculator::Open(
+    CalculatorContext* cc) {
   const auto& options = cc->Options<FrameAnnotationTrackerCalculatorOptions>();
   frame_annotation_tracker_ = absl::make_unique<FrameAnnotationTracker>(
       options.iou_threshold(), options.img_width(), options.img_height());
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status FrameAnnotationTrackerCalculator::Process(CalculatorContext* cc) {
+mediapipe::Status FrameAnnotationTrackerCalculator::Process(
+    CalculatorContext* cc) {
   if (cc->Inputs().HasTag(kInputFrameAnnotationTag) &&
       !cc->Inputs().Tag(kInputFrameAnnotationTag).IsEmpty()) {
     frame_annotation_tracker_->AddDetectionResult(
@@ -124,11 +126,12 @@ absl::Status FrameAnnotationTrackerCalculator::Process(CalculatorContext* cc) {
     }
   }
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status FrameAnnotationTrackerCalculator::Close(CalculatorContext* cc) {
-  return absl::OkStatus();
+mediapipe::Status FrameAnnotationTrackerCalculator::Close(
+    CalculatorContext* cc) {
+  return mediapipe::OkStatus();
 }
 
 }  // namespace mediapipe

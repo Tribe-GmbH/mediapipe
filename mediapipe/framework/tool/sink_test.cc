@@ -31,21 +31,21 @@ namespace mediapipe {
 namespace {
 class CountAndOutputSummarySidePacketInCloseCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc) {
+  static mediapipe::Status GetContract(CalculatorContract* cc) {
     cc->Inputs().Index(0).SetAny();
     cc->OutputSidePackets().Index(0).Set<int>();
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Process(CalculatorContext* cc) final {
+  mediapipe::Status Process(CalculatorContext* cc) final {
     ++count_;
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Close(CalculatorContext* cc) final {
+  mediapipe::Status Close(CalculatorContext* cc) final {
     cc->OutputSidePackets().Index(0).Set(
         MakePacket<int>(count_).At(Timestamp::Unset()));
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
   int count_ = 0;

@@ -35,7 +35,7 @@ class GlContext::DedicatedThread {
   DedicatedThread(const DedicatedThread&) = delete;
   DedicatedThread& operator=(DedicatedThread) = delete;
 
-  absl::Status Run(GlStatusFunction gl_func);
+  ::mediapipe::Status Run(GlStatusFunction gl_func);
   void RunWithoutWaiting(GlVoidFunction gl_fund);
 
   bool IsCurrentThread();

@@ -249,20 +249,20 @@ void ReleaseMediaPipePacket(void* refcon, const void* base_address) {
 CVPixelBufferRef CreateCVPixelBufferForImageFramePacket(
     const mediapipe::Packet& image_frame_packet) {
   CFHolder<CVPixelBufferRef> buffer;
-  absl::Status status =
+  ::mediapipe::Status status =
       CreateCVPixelBufferForImageFramePacket(image_frame_packet, &buffer);
   MEDIAPIPE_CHECK_OK(status) << "Failed to create CVPixelBufferRef";
   return (CVPixelBufferRef)CFRetain(*buffer);
 }
 
-absl::Status CreateCVPixelBufferForImageFramePacket(
+::mediapipe::Status CreateCVPixelBufferForImageFramePacket(
     const mediapipe::Packet& image_frame_packet,
     CFHolder<CVPixelBufferRef>* out_buffer) {
   return CreateCVPixelBufferForImageFramePacket(image_frame_packet, false,
                                                 out_buffer);
 }
 
-absl::Status CreateCVPixelBufferForImageFramePacket(
+::mediapipe::Status CreateCVPixelBufferForImageFramePacket(
     const mediapipe::Packet& image_frame_packet, bool can_overwrite,
     CFHolder<CVPixelBufferRef>* out_buffer) {
   if (!out_buffer) {
@@ -342,11 +342,11 @@ absl::Status CreateCVPixelBufferForImageFramePacket(
   }
 
   *out_buffer = pixel_buffer;
-  return absl::OkStatus();
+  return ::mediapipe::OkStatus();
 }
 
-absl::Status CreateCGImageFromCVPixelBuffer(CVPixelBufferRef image_buffer,
-                                            CFHolder<CGImageRef>* image) {
+::mediapipe::Status CreateCGImageFromCVPixelBuffer(
+    CVPixelBufferRef image_buffer, CFHolder<CGImageRef>* image) {
   CVReturn status =
       CVPixelBufferLockBaseAddress(image_buffer, kCVPixelBufferLock_ReadOnly);
   RET_CHECK(status == kCVReturnSuccess)
@@ -390,10 +390,10 @@ absl::Status CreateCGImageFromCVPixelBuffer(CVPixelBufferRef image_buffer,
       << "CVPixelBufferUnlockBaseAddress failed: " << status;
 
   *image = cg_image_holder;
-  return absl::OkStatus();
+  return ::mediapipe::OkStatus();
 }
 
-absl::Status CreateCVPixelBufferFromCGImage(
+::mediapipe::Status CreateCVPixelBufferFromCGImage(
     CGImageRef image, CFHolder<CVPixelBufferRef>* out_buffer) {
   size_t width = CGImageGetWidth(image);
   size_t height = CGImageGetHeight(image);
@@ -428,7 +428,7 @@ absl::Status CreateCVPixelBufferFromCGImage(
       << "CVPixelBufferUnlockBaseAddress failed: " << status;
 
   *out_buffer = pixel_buffer;
-  return absl::OkStatus();
+  return ::mediapipe::OkStatus();
 }
 
 std::unique_ptr<mediapipe::ImageFrame> CreateImageFrameForCVPixelBuffer(

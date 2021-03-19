@@ -667,7 +667,7 @@ bool BoxTracker::WaitForChunkFile(int id, int checkpoint,
       }
     }
 
-    absl::SleepFor(absl::Milliseconds(wait_time_msec));
+    usleep(wait_time_msec * 1000);
     total_wait_msec += wait_time_msec;
 
     struct stat tmp;

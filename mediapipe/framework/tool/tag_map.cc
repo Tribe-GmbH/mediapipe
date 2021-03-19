@@ -37,7 +37,7 @@ void TagMap::InitializeNames(
   }
 }
 
-absl::Status TagMap::Initialize(
+mediapipe::Status TagMap::Initialize(
     const proto_ns::RepeatedPtrField<ProtoString>& tag_index_names) {
   std::map<std::string, std::vector<std::string>> tag_to_names;
   for (const auto& tag_index_name : tag_index_names) {
@@ -100,10 +100,10 @@ absl::Status TagMap::Initialize(
   num_entries_ = current_index;
 
   InitializeNames(tag_to_names);
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TagMap::Initialize(const TagAndNameInfo& info) {
+mediapipe::Status TagMap::Initialize(const TagAndNameInfo& info) {
   if (info.tags.empty()) {
     if (!info.names.empty()) {
       mapping_.emplace(
@@ -115,7 +115,7 @@ absl::Status TagMap::Initialize(const TagAndNameInfo& info) {
   } else {
     std::map<std::string, std::vector<std::string>> tag_to_names;
     if (info.tags.size() != info.names.size()) {
-      return absl::FailedPreconditionError(
+      return mediapipe::FailedPreconditionError(
           "Expected info.tags.size() == info.names.size()");
     }
 
@@ -139,7 +139,7 @@ absl::Status TagMap::Initialize(const TagAndNameInfo& info) {
     // Now create the names_ array in the correctly sorted order.
     InitializeNames(tag_to_names);
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 proto_ns::RepeatedPtrField<ProtoString> TagMap::CanonicalEntries() const {

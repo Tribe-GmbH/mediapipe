@@ -42,7 +42,7 @@ namespace mediapipe::face_geometry {
 namespace {
 
 struct RenderableMesh3d {
-  static absl::StatusOr<RenderableMesh3d> CreateFromProtoMesh3d(
+  static mediapipe::StatusOr<RenderableMesh3d> CreateFromProtoMesh3d(
       const Mesh3d& proto_mesh_3d) {
     Mesh3d::VertexType vertex_type = proto_mesh_3d.vertex_type();
 
@@ -106,14 +106,14 @@ struct RenderableMesh3d {
 
 class Texture {
  public:
-  static absl::StatusOr<std::unique_ptr<Texture>> WrapExternalTexture(
+  static mediapipe::StatusOr<std::unique_ptr<Texture>> WrapExternalTexture(
       GLuint handle, GLenum target, int width, int height) {
     RET_CHECK(handle) << "External texture must have a non-null handle!";
     return absl::WrapUnique(new Texture(handle, target, width, height,
                                         /*is_owned*/ false));
   }
 
-  static absl::StatusOr<std::unique_ptr<Texture>> CreateFromImageFrame(
+  static mediapipe::StatusOr<std::unique_ptr<Texture>> CreateFromImageFrame(
       const ImageFrame& image_frame) {
     RET_CHECK(image_frame.IsAligned(ImageFrame::kGlDefaultAlignmentBoundary))
         << "Image frame memory must be aligned for GL usage!";
@@ -187,7 +187,7 @@ class Texture {
 
 class RenderTarget {
  public:
-  static absl::StatusOr<std::unique_ptr<RenderTarget>> Create() {
+  static mediapipe::StatusOr<std::unique_ptr<RenderTarget>> Create() {
     GLuint framebuffer_handle;
     glGenFramebuffers(1, &framebuffer_handle);
     RET_CHECK(framebuffer_handle)
@@ -205,7 +205,7 @@ class RenderTarget {
     }
   }
 
-  absl::Status SetColorbuffer(const Texture& colorbuffer_texture) {
+  mediapipe::Status SetColorbuffer(const Texture& colorbuffer_texture) {
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_handle_);
     glViewport(0, 0, colorbuffer_texture.width(), colorbuffer_texture.height());
 
@@ -245,7 +245,7 @@ class RenderTarget {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glFlush();
 
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
   void Bind() const {
@@ -288,7 +288,7 @@ class Renderer {
  public:
   enum class RenderMode { OPAQUE, OVERDRAW, OCCLUSION };
 
-  static absl::StatusOr<std::unique_ptr<Renderer>> Create() {
+  static mediapipe::StatusOr<std::unique_ptr<Renderer>> Create() {
     static const GLint kAttrLocation[NUM_ATTRIBUTES] = {
         ATTRIB_VERTEX,
         ATTRIB_TEXTURE_POSITION,
@@ -346,11 +346,12 @@ class Renderer {
 
   ~Renderer() { glDeleteProgram(program_handle_); }
 
-  absl::Status Render(const RenderTarget& render_target, const Texture& texture,
-                      const RenderableMesh3d& mesh_3d,
-                      const std::array<float, 16>& projection_mat,
-                      const std::array<float, 16>& model_mat,
-                      RenderMode render_mode) const {
+  mediapipe::Status Render(const RenderTarget& render_target,
+                           const Texture& texture,
+                           const RenderableMesh3d& mesh_3d,
+                           const std::array<float, 16>& projection_mat,
+                           const std::array<float, 16>& model_mat,
+                           RenderMode render_mode) const {
     glUseProgram(program_handle_);
     // Set up the GL state.
     glEnable(GL_BLEND);
@@ -412,7 +413,7 @@ class Renderer {
     glUseProgram(0);
     glFlush();
 
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
  private:
@@ -450,7 +451,7 @@ class EffectRendererImpl : public EffectRenderer {
         effect_texture_(std::move(effect_texture)),
         identity_matrix_(Create4x4IdentityMatrix()) {}
 
-  absl::Status RenderEffect(
+  mediapipe::Status RenderEffect(
       const std::vector<FaceGeometry>& multi_face_geometry,
       int frame_width,            //
       int frame_height,           //
@@ -566,7 +567,7 @@ class EffectRendererImpl : public EffectRenderer {
 
     // At this point in the code, the destination texture must contain the
     // correctly renderer effect, so we should just return.
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
  private:
@@ -605,7 +606,7 @@ class EffectRendererImpl : public EffectRenderer {
             0.f, 0.f, 0.f, 1.f};
   }
 
-  static absl::StatusOr<std::array<float, 16>>
+  static mediapipe::StatusOr<std::array<float, 16>>
   Convert4x4MatrixDataToArrayFormat(const MatrixData& matrix_data) {
     RET_CHECK(matrix_data.rows() == 4 &&  //
               matrix_data.cols() == 4 &&  //
@@ -688,7 +689,7 @@ ImageFrame CreateEmptyColorTexture() {
 
 }  // namespace
 
-absl::StatusOr<std::unique_ptr<EffectRenderer>> CreateEffectRenderer(
+mediapipe::StatusOr<std::unique_ptr<EffectRenderer>> CreateEffectRenderer(
     const Environment& environment,                //
     const absl::optional<Mesh3d>& effect_mesh_3d,  //
     ImageFrame&& effect_texture) {

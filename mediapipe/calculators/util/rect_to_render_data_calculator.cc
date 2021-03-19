@@ -94,18 +94,19 @@ void SetRect(bool normalized, double xmin, double ymin, double width,
 // }
 class RectToRenderDataCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc);
+  static mediapipe::Status GetContract(CalculatorContract* cc);
 
-  absl::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Open(CalculatorContext* cc) override;
 
-  absl::Status Process(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
 
  private:
   RectToRenderDataCalculatorOptions options_;
 };
 REGISTER_CALCULATOR(RectToRenderDataCalculator);
 
-absl::Status RectToRenderDataCalculator::GetContract(CalculatorContract* cc) {
+mediapipe::Status RectToRenderDataCalculator::GetContract(
+    CalculatorContract* cc) {
   RET_CHECK_EQ((cc->Inputs().HasTag(kNormRectTag) ? 1 : 0) +
                    (cc->Inputs().HasTag(kRectTag) ? 1 : 0) +
                    (cc->Inputs().HasTag(kNormRectsTag) ? 1 : 0) +
@@ -129,18 +130,18 @@ absl::Status RectToRenderDataCalculator::GetContract(CalculatorContract* cc) {
   }
   cc->Outputs().Tag(kRenderDataTag).Set<RenderData>();
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status RectToRenderDataCalculator::Open(CalculatorContext* cc) {
+mediapipe::Status RectToRenderDataCalculator::Open(CalculatorContext* cc) {
   cc->SetOffset(TimestampDiff(0));
 
   options_ = cc->Options<RectToRenderDataCalculatorOptions>();
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status RectToRenderDataCalculator::Process(CalculatorContext* cc) {
+mediapipe::Status RectToRenderDataCalculator::Process(CalculatorContext* cc) {
   auto render_data = absl::make_unique<RenderData>();
 
   if (cc->Inputs().HasTag(kNormRectTag) &&
@@ -184,7 +185,7 @@ absl::Status RectToRenderDataCalculator::Process(CalculatorContext* cc) {
       .Tag(kRenderDataTag)
       .Add(render_data.release(), cc->InputTimestamp());
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 }  // namespace mediapipe

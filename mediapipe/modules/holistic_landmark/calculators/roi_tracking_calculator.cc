@@ -253,36 +253,36 @@ bool LandmarksRequirementsSatisfied(const NormalizedLandmarkList& landmarks,
 //   }
 class RoiTrackingCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc);
-  absl::Status Open(CalculatorContext* cc) override;
-  absl::Status Process(CalculatorContext* cc) override;
+  static mediapipe::Status GetContract(CalculatorContract* cc);
+  mediapipe::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
 
  private:
   RoiTrackingCalculatorOptions options_;
 };
 REGISTER_CALCULATOR(RoiTrackingCalculator);
 
-absl::Status RoiTrackingCalculator::GetContract(CalculatorContract* cc) {
+mediapipe::Status RoiTrackingCalculator::GetContract(CalculatorContract* cc) {
   cc->Inputs().Tag(kPrevLandmarksTag).Set<NormalizedLandmarkList>();
   cc->Inputs().Tag(kPrevLandmarksRectTag).Set<NormalizedRect>();
   cc->Inputs().Tag(kRecropRectTag).Set<NormalizedRect>();
   cc->Inputs().Tag(kImageSizeTag).Set<std::pair<int, int>>();
   cc->Outputs().Tag(kTrackingRectTag).Set<NormalizedRect>();
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status RoiTrackingCalculator::Open(CalculatorContext* cc) {
+mediapipe::Status RoiTrackingCalculator::Open(CalculatorContext* cc) {
   cc->SetOffset(TimestampDiff(0));
   options_ = cc->Options<RoiTrackingCalculatorOptions>();
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status RoiTrackingCalculator::Process(CalculatorContext* cc) {
+mediapipe::Status RoiTrackingCalculator::Process(CalculatorContext* cc) {
   // If there is no current frame re-crop rect (i.e. object is not present on
   // the current frame) - return empty packet.
   if (cc->Inputs().Tag(kRecropRectTag).IsEmpty()) {
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
   // If there is no previous rect, but there is current re-crop rect - return
@@ -291,7 +291,7 @@ absl::Status RoiTrackingCalculator::Process(CalculatorContext* cc) {
     cc->Outputs()
         .Tag(kTrackingRectTag)
         .AddPacket(cc->Inputs().Tag(kRecropRectTag).Value());
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
   // At this point we have both previous rect (which also means we have previous
@@ -352,7 +352,7 @@ absl::Status RoiTrackingCalculator::Process(CalculatorContext* cc) {
     VLOG(1) << "Lost tracking: check messages above for details";
   }
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 }  // namespace mediapipe

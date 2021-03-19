@@ -99,11 +99,11 @@ class PacketReservoir {
 //   packet_downsampler_calculator.cc: skips packets regardless of timestamps.
 class PacketResamplerCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc);
+  static mediapipe::Status GetContract(CalculatorContract* cc);
 
-  absl::Status Open(CalculatorContext* cc) override;
-  absl::Status Close(CalculatorContext* cc) override;
-  absl::Status Process(CalculatorContext* cc) override;
+  mediapipe::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Close(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
 
  private:
   // Calculates the first sampled timestamp that incorporates a jittering
@@ -113,10 +113,10 @@ class PacketResamplerCalculator : public CalculatorBase {
   void UpdateNextOutputTimestampWithJitter();
 
   // Logic for Process() when jitter_ != 0.0.
-  absl::Status ProcessWithJitter(CalculatorContext* cc);
+  mediapipe::Status ProcessWithJitter(CalculatorContext* cc);
 
   // Logic for Process() when jitter_ == 0.0.
-  absl::Status ProcessWithoutJitter(CalculatorContext* cc);
+  mediapipe::Status ProcessWithoutJitter(CalculatorContext* cc);
 
   // Given the current count of periods that have passed, this returns
   // the next valid timestamp of the middle point of the next period:

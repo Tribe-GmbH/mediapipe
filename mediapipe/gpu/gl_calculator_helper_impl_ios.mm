@@ -28,6 +28,15 @@
 
 namespace mediapipe {
 
+GlVersion GlCalculatorHelperImpl::GetGlVersion() {
+#if TARGET_OS_OSX
+  return GlVersion::kGL;
+#else
+  if (gl_context_->eagl_context().API == kEAGLRenderingAPIOpenGLES3) return GlVersion::kGLES3;
+  else return GlVersion::kGLES2;
+#endif  // TARGET_OS_OSX
+}
+
 #if MEDIAPIPE_GPU_BUFFER_USE_CV_PIXEL_BUFFER
 GlTexture GlCalculatorHelperImpl::CreateSourceTexture(
     const mediapipe::ImageFrame& image_frame) {
@@ -113,9 +122,9 @@ std::unique_ptr<ImageFrame> GlTexture::GetFrame<ImageFrame>() const {
 
   ImageFormat::Format image_format =
       ImageFormatForGpuBufferFormat(gpu_buffer_.format());
-  CHECK(helper_impl_);
-  GlTextureInfo info =
-      GlTextureInfoForGpuBufferFormat(gpu_buffer_.format(), plane_, helper_impl_->GetGlVersion());
+  // TODO: handle gl version here.
+  GlTextureInfo info = GlTextureInfoForGpuBufferFormat(
+      gpu_buffer_.format(), plane_);
 
   auto output = absl::make_unique<ImageFrame>(
       image_format, width_, height_);

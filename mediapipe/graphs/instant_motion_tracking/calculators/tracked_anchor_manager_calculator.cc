@@ -71,7 +71,7 @@ class TrackedAnchorManagerCalculator : public CalculatorBase {
   std::vector<Anchor> previous_anchor_data_;
 
  public:
-  static absl::Status GetContract(CalculatorContract* cc) {
+  static mediapipe::Status GetContract(CalculatorContract* cc) {
     RET_CHECK(cc->Inputs().HasTag(kAnchorsTag) &&
               cc->Inputs().HasTag(kSentinelTag));
     RET_CHECK(cc->Outputs().HasTag(kAnchorsTag) &&
@@ -91,16 +91,19 @@ class TrackedAnchorManagerCalculator : public CalculatorBase {
       cc->Outputs().Tag(kCancelTag).Set<int>();
     }
 
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Open(CalculatorContext* cc) override { return absl::OkStatus(); }
+  mediapipe::Status Open(CalculatorContext* cc) override {
+    return mediapipe::OkStatus();
+  }
 
-  absl::Status Process(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
 };
 REGISTER_CALCULATOR(TrackedAnchorManagerCalculator);
 
-absl::Status TrackedAnchorManagerCalculator::Process(CalculatorContext* cc) {
+mediapipe::Status TrackedAnchorManagerCalculator::Process(
+    CalculatorContext* cc) {
   mediapipe::Timestamp timestamp = cc->InputTimestamp();
   const int sticker_sentinel = cc->Inputs().Tag(kSentinelTag).Get<int>();
   std::vector<Anchor> current_anchor_data =
@@ -205,6 +208,6 @@ absl::Status TrackedAnchorManagerCalculator::Process(CalculatorContext* cc) {
       .Tag(kBoxesOutputTag)
       .Add(pos_boxes.release(), cc->InputTimestamp());
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 }  // namespace mediapipe

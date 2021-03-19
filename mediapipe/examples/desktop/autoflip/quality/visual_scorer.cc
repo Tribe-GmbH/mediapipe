@@ -48,9 +48,9 @@ void CropRectToMat(const cv::Mat& image, cv::Rect* rect) {
 VisualScorer::VisualScorer(const VisualScorerOptions& options)
     : options_(options) {}
 
-absl::Status VisualScorer::CalculateScore(const cv::Mat& image,
-                                          const SalientRegion& region,
-                                          float* score) const {
+mediapipe::Status VisualScorer::CalculateScore(const cv::Mat& image,
+                                               const SalientRegion& region,
+                                               float* score) const {
   const float weight_sum = options_.area_weight() +
                            options_.sharpness_weight() +
                            options_.colorfulness_weight();
@@ -74,7 +74,7 @@ absl::Status VisualScorer::CalculateScore(const cv::Mat& image,
   CropRectToMat(image, &region_rect);
   if (region_rect.area() == 0) {
     *score = 0;
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
   // Compute a score based on area covered by this region.
@@ -108,11 +108,11 @@ absl::Status VisualScorer::CalculateScore(const cv::Mat& image,
   if (*score > 1.0f || *score < 0.0f) {
     LOG(WARNING) << "Score of region outside expected range: " << *score;
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status VisualScorer::CalculateColorfulness(const cv::Mat& image,
-                                                 float* colorfulness) const {
+mediapipe::Status VisualScorer::CalculateColorfulness(
+    const cv::Mat& image, float* colorfulness) const {
   // Convert the image to HSV.
   cv::Mat image_hsv;
   cv::cvtColor(image, image_hsv, CV_RGB2HSV);
@@ -134,7 +134,7 @@ absl::Status VisualScorer::CalculateColorfulness(const cv::Mat& image,
   // If the mask is empty, return.
   if (empty_mask) {
     *colorfulness = 0;
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
   // Generate a 2D histogram (hue/saturation).
@@ -162,7 +162,7 @@ absl::Status VisualScorer::CalculateColorfulness(const cv::Mat& image,
   }
   if (hue_sum == 0.0f) {
     *colorfulness = 0;
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
   // Compute the histogram entropy.
@@ -175,7 +175,7 @@ absl::Status VisualScorer::CalculateColorfulness(const cv::Mat& image,
   }
   *colorfulness /= std::log(2.0f);
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 }  // namespace autoflip

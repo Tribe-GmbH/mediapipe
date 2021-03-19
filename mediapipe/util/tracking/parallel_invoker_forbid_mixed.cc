@@ -15,10 +15,14 @@
 // Guard to ensure clients do not link against both,
 // single and parallel version.
 #ifdef PARALLEL_INVOKER_ACTIVE
-int LinkageAgainstBothSingleAndParallelTrackingVersionsDetected() { return 0; }
+int LinkageAgainstBothSingleAndParallelStabilizationVersionsDetected() {
+  return 0;
+}
 
 #endif  // PARALLEL_INVOKER_ACTIVE
 
 #ifdef PARALLEL_INVOKER_INACTIVE
-int LinkageAgainstBothSingleAndParallelTrackingVersionsDetected() { return 1; }
+int LinkageAgainstBothSingleAndParallelStabilizationVersionsDetected() {
+  return 1;
+}
 #endif  // PARALLEL_INVOKER_INACTIVE

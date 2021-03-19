@@ -53,25 +53,25 @@ class CalculatorGraphEventLoopTest : public testing::Test {
 // testing.
 class BlockingPassThroughCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc) {
+  static mediapipe::Status GetContract(CalculatorContract* cc) {
     cc->Inputs().Index(0).SetAny();
     cc->Outputs().Index(0).SetSameAs(&cc->Inputs().Index(0));
     cc->InputSidePackets().Index(0).Set<std::unique_ptr<absl::Mutex>>();
 
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Open(CalculatorContext* cc) final {
+  mediapipe::Status Open(CalculatorContext* cc) final {
     mutex_ = GetFromUniquePtr<absl::Mutex>(cc->InputSidePackets().Index(0));
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Process(CalculatorContext* cc) final {
+  mediapipe::Status Process(CalculatorContext* cc) final {
     mutex_->Lock();
     cc->Outputs().Index(0).AddPacket(
         cc->Inputs().Index(0).Value().At(cc->InputTimestamp()));
     mutex_->Unlock();
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
  private:
@@ -87,15 +87,15 @@ struct SimpleHeader {
 
 class UsingHeaderCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc) {
+  static mediapipe::Status GetContract(CalculatorContract* cc) {
     cc->Inputs().Index(0).SetAny();
     cc->Outputs().Index(0).SetSameAs(&cc->Inputs().Index(0));
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Open(CalculatorContext* cc) final {
+  mediapipe::Status Open(CalculatorContext* cc) final {
     if (cc->Inputs().Index(0).Header().IsEmpty()) {
-      return absl::UnknownError("No stream header present.");
+      return mediapipe::UnknownError("No stream header present.");
     }
 
     const SimpleHeader& header =
@@ -105,13 +105,13 @@ class UsingHeaderCalculator : public CalculatorBase {
     output_header->height = header.height;
 
     cc->Outputs().Index(0).SetHeader(Adopt(output_header.release()));
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Process(CalculatorContext* cc) final {
+  mediapipe::Status Process(CalculatorContext* cc) final {
     cc->Outputs().Index(0).AddPacket(
         cc->Inputs().Index(0).Value().At(cc->InputTimestamp()));
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 };
 REGISTER_CALCULATOR(UsingHeaderCalculator);
@@ -187,20 +187,21 @@ TEST_F(CalculatorGraphEventLoopTest, WellProvisionedEventLoop) {
 // Pass-Through calculator that fails upon receiving the 10th packet.
 class FailingPassThroughCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc) {
+  static mediapipe::Status GetContract(CalculatorContract* cc) {
     cc->Inputs().Index(0).SetAny();
     cc->Outputs().Index(0).SetSameAs(&cc->Inputs().Index(0));
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Process(CalculatorContext* cc) final {
+  mediapipe::Status Process(CalculatorContext* cc) final {
     Timestamp timestamp = cc->InputTimestamp();
     if (timestamp.Value() == 9) {
-      return absl::UnknownError("Meant to fail (magicstringincludedhere).");
+      return mediapipe::UnknownError(
+          "Meant to fail (magicstringincludedhere).");
     }
     cc->Outputs().Index(0).AddPacket(
         cc->Inputs().Index(0).Value().At(timestamp));
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 };
 REGISTER_CALCULATOR(FailingPassThroughCalculator);
@@ -230,7 +231,7 @@ TEST_F(CalculatorGraphEventLoopTest, FailingEventLoop) {
                         this, std::placeholders::_1))}}));
 
   // Insert packets.
-  absl::Status status;
+  mediapipe::Status status;
   for (int i = 0; true; ++i) {
     status = graph.AddPacketToInputStream("input_numbers",
                                           Adopt(new int(i)).At(Timestamp(i)));
@@ -314,10 +315,10 @@ TEST_F(CalculatorGraphEventLoopTest, SetStreamHeader) {
                         &CalculatorGraphEventLoopTest::AddThreadSafeVectorSink,
                         this, std::placeholders::_1))}}));
 
-  absl::Status status = graph.WaitUntilIdle();
+  mediapipe::Status status = graph.WaitUntilIdle();
   // Expect to fail if header not set.
   ASSERT_FALSE(status.ok());
-  EXPECT_EQ(status.code(), absl::StatusCode::kUnknown);
+  EXPECT_EQ(status.code(), mediapipe::StatusCode::kUnknown);
   EXPECT_THAT(status.message(),
               testing::HasSubstr("No stream header present."));
 
@@ -386,7 +387,7 @@ TEST_F(CalculatorGraphEventLoopTest, TryToAddPacketToInputStream) {
   // mechanism could be off by 1 at most due to the order of acquisition of
   // locks.
   for (int i = 0; i < kNumInputPackets; ++i) {
-    absl::Status status = graph.AddPacketToInputStream(
+    mediapipe::Status status = graph.AddPacketToInputStream(
         "input_numbers", Adopt(new int(i)).At(Timestamp(i)));
     if (!status.ok()) {
       ++fail_count;
@@ -471,7 +472,7 @@ TEST_F(CalculatorGraphEventLoopTest, ThrottleGraphInputStreamTwice) {
     // Lock the mutex so that the BlockingPassThroughCalculator cannot read any
     // of these packets.
     mutex->Lock();
-    absl::Status status = absl::OkStatus();
+    mediapipe::Status status = mediapipe::OkStatus();
     for (int i = 0; i < 10; ++i) {
       status = graph.AddPacketToInputStream("input_numbers",
                                             Adopt(new int(i)).At(Timestamp(i)));
@@ -481,7 +482,7 @@ TEST_F(CalculatorGraphEventLoopTest, ThrottleGraphInputStreamTwice) {
     }
     mutex->Unlock();
     ASSERT_FALSE(status.ok());
-    EXPECT_EQ(status.code(), absl::StatusCode::kUnavailable);
+    EXPECT_EQ(status.code(), mediapipe::StatusCode::kUnavailable);
     EXPECT_THAT(status.message(), testing::HasSubstr("Graph is throttled."));
     MP_ASSERT_OK(graph.CloseInputStream("input_numbers"));
     MP_ASSERT_OK(graph.WaitUntilDone());
@@ -522,7 +523,7 @@ TEST_F(CalculatorGraphEventLoopTest, WaitToAddPacketToInputStream) {
   // All of these packets should be accepted by the graph.
   int fail_count = 0;
   for (int i = 0; i < kNumInputPackets; ++i) {
-    absl::Status status = graph.AddPacketToInputStream(
+    mediapipe::Status status = graph.AddPacketToInputStream(
         "input_numbers", Adopt(new int(i)).At(Timestamp(i)));
     if (!status.ok()) {
       ++fail_count;
@@ -575,7 +576,7 @@ TEST_F(CalculatorGraphEventLoopTest, UnthrottleSources) {
       CalculatorGraph::GraphInputStreamAddMode::ADD_IF_NOT_FULL);
   auto poller_status = graph.AddOutputStreamPoller("output_numbers");
   MP_ASSERT_OK(poller_status.status());
-  mediapipe::OutputStreamPoller& poller = poller_status.value();
+  mediapipe::OutputStreamPoller& poller = poller_status.ValueOrDie();
   poller.SetMaxQueueSize(kQueueSize);
   MP_ASSERT_OK(graph.StartRun({}));
 

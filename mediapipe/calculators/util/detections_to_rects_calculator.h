@@ -83,21 +83,21 @@ struct DetectionSpec {
 // }
 class DetectionsToRectsCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc);
+  static mediapipe::Status GetContract(CalculatorContract* cc);
 
-  absl::Status Open(CalculatorContext* cc) override;
-  absl::Status Process(CalculatorContext* cc) override;
+  mediapipe::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
 
  protected:
-  virtual absl::Status DetectionToRect(const ::mediapipe::Detection& detection,
-                                       const DetectionSpec& detection_spec,
-                                       ::mediapipe::Rect* rect);
-  virtual absl::Status DetectionToNormalizedRect(
+  virtual mediapipe::Status DetectionToRect(
+      const ::mediapipe::Detection& detection,
+      const DetectionSpec& detection_spec, ::mediapipe::Rect* rect);
+  virtual mediapipe::Status DetectionToNormalizedRect(
       const ::mediapipe::Detection& detection,
       const DetectionSpec& detection_spec, ::mediapipe::NormalizedRect* rect);
-  virtual absl::Status ComputeRotation(const ::mediapipe::Detection& detection,
-                                       const DetectionSpec& detection_spec,
-                                       float* rotation);
+  virtual mediapipe::Status ComputeRotation(
+      const ::mediapipe::Detection& detection,
+      const DetectionSpec& detection_spec, float* rotation);
   virtual DetectionSpec GetDetectionSpec(const CalculatorContext* cc);
 
   static inline float NormalizeRadians(float angle) {

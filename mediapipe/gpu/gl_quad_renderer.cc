@@ -54,11 +54,11 @@ FrameRotation FrameRotationFromDegrees(int degrees_ccw) {
   }
 }
 
-absl::Status QuadRenderer::GlSetup() {
+::mediapipe::Status QuadRenderer::GlSetup() {
   return GlSetup(kBasicTexturedFragmentShader, {"video_frame"});
 }
 
-absl::Status QuadRenderer::GlSetup(
+::mediapipe::Status QuadRenderer::GlSetup(
     const GLchar* custom_frag_shader,
     const std::vector<const GLchar*>& custom_frame_uniforms) {
   // Load vertex and fragment shaders
@@ -87,7 +87,7 @@ absl::Status QuadRenderer::GlSetup(
   glGenVertexArrays(1, &vao_);
   glGenBuffers(2, vbo_);
 
-  return absl::OkStatus();
+  return ::mediapipe::OkStatus();
 }
 
 void QuadRenderer::GlTeardown() {
@@ -106,12 +106,10 @@ void QuadRenderer::GlTeardown() {
   }
 }
 
-absl::Status QuadRenderer::GlRender(float frame_width, float frame_height,
-                                    float view_width, float view_height,
-                                    FrameScaleMode scale_mode,
-                                    FrameRotation rotation,
-                                    bool flip_horizontal, bool flip_vertical,
-                                    bool flip_texture) {
+::mediapipe::Status QuadRenderer::GlRender(
+    float frame_width, float frame_height, float view_width, float view_height,
+    FrameScaleMode scale_mode, FrameRotation rotation, bool flip_horizontal,
+    bool flip_vertical, bool flip_texture) {
   RET_CHECK(program_) << "Must setup the program before rendering.";
 
   glUseProgram(program_);
@@ -197,14 +195,15 @@ absl::Status QuadRenderer::GlRender(float frame_width, float frame_height,
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
 
-  return absl::OkStatus();
+  return ::mediapipe::OkStatus();
 }
 
-absl::Status FrameRotationFromInt(FrameRotation* rotation, int degrees_ccw) {
+::mediapipe::Status FrameRotationFromInt(FrameRotation* rotation,
+                                         int degrees_ccw) {
   RET_CHECK(degrees_ccw % 90 == 0) << "rotation must be a multiple of 90; "
                                    << degrees_ccw << " was provided";
   *rotation = FrameRotationFromDegrees(degrees_ccw % 360);
-  return absl::OkStatus();
+  return ::mediapipe::OkStatus();
 }
 
 }  // namespace mediapipe

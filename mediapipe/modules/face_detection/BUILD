@@ -26,10 +26,12 @@ mediapipe_simple_subgraph(
     graph = "face_detection_front_by_roi_cpu.pbtxt",
     register_as = "FaceDetectionFrontByRoiCpu",
     deps = [
-        ":face_detection_front_common",
         "//mediapipe/calculators/tensor:image_to_tensor_calculator",
         "//mediapipe/calculators/tensor:inference_calculator",
-        "//mediapipe/calculators/util:to_image_calculator",
+        "//mediapipe/calculators/tensor:tensors_to_detections_calculator",
+        "//mediapipe/calculators/tflite:ssd_anchors_calculator",
+        "//mediapipe/calculators/util:detection_projection_calculator",
+        "//mediapipe/calculators/util:non_max_suppression_calculator",
     ],
 )
 
@@ -38,10 +40,12 @@ mediapipe_simple_subgraph(
     graph = "face_detection_front_by_roi_gpu.pbtxt",
     register_as = "FaceDetectionFrontByRoiGpu",
     deps = [
-        ":face_detection_front_common",
         "//mediapipe/calculators/tensor:image_to_tensor_calculator",
         "//mediapipe/calculators/tensor:inference_calculator",
-        "//mediapipe/calculators/util:to_image_calculator",
+        "//mediapipe/calculators/tensor:tensors_to_detections_calculator",
+        "//mediapipe/calculators/tflite:ssd_anchors_calculator",
+        "//mediapipe/calculators/util:detection_projection_calculator",
+        "//mediapipe/calculators/util:non_max_suppression_calculator",
     ],
 )
 
@@ -50,10 +54,12 @@ mediapipe_simple_subgraph(
     graph = "face_detection_front_cpu.pbtxt",
     register_as = "FaceDetectionFrontCpu",
     deps = [
-        ":face_detection_front_common",
         "//mediapipe/calculators/tensor:image_to_tensor_calculator",
         "//mediapipe/calculators/tensor:inference_calculator",
-        "//mediapipe/calculators/util:to_image_calculator",
+        "//mediapipe/calculators/tensor:tensors_to_detections_calculator",
+        "//mediapipe/calculators/tflite:ssd_anchors_calculator",
+        "//mediapipe/calculators/util:detection_letterbox_removal_calculator",
+        "//mediapipe/calculators/util:non_max_suppression_calculator",
     ],
 )
 
@@ -62,21 +68,11 @@ mediapipe_simple_subgraph(
     graph = "face_detection_front_gpu.pbtxt",
     register_as = "FaceDetectionFrontGpu",
     deps = [
-        ":face_detection_front_common",
         "//mediapipe/calculators/tensor:image_to_tensor_calculator",
         "//mediapipe/calculators/tensor:inference_calculator",
-        "//mediapipe/calculators/util:to_image_calculator",
-    ],
-)
-
-mediapipe_simple_subgraph(
-    name = "face_detection_front_common",
-    graph = "face_detection_front_common.pbtxt",
-    register_as = "FaceDetectionFrontCommon",
-    deps = [
         "//mediapipe/calculators/tensor:tensors_to_detections_calculator",
         "//mediapipe/calculators/tflite:ssd_anchors_calculator",
-        "//mediapipe/calculators/util:detection_projection_calculator",
+        "//mediapipe/calculators/util:detection_letterbox_removal_calculator",
         "//mediapipe/calculators/util:non_max_suppression_calculator",
     ],
 )

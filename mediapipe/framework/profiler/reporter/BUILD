@@ -51,6 +51,7 @@ cc_binary(
     deps = [
         ":reporter_lib",
         "//mediapipe/framework/port:advanced_proto",
+        "//mediapipe/framework/port:commandlineflags",
         "//mediapipe/framework/port:file_helpers",
         "//mediapipe/framework/port:status",
         "@com_google_absl//absl/container:btree",

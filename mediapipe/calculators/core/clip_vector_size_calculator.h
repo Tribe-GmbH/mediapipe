@@ -43,13 +43,13 @@ namespace mediapipe {
 template <typename T>
 class ClipVectorSizeCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc) {
+  static mediapipe::Status GetContract(CalculatorContract* cc) {
     RET_CHECK(cc->Inputs().NumEntries() == 1);
     RET_CHECK(cc->Outputs().NumEntries() == 1);
 
     if (cc->Options<::mediapipe::ClipVectorSizeCalculatorOptions>()
             .max_vec_size() < 1) {
-      return absl::InternalError(
+      return mediapipe::InternalError(
           "max_vec_size should be greater than or equal to 1.");
     }
 
@@ -60,10 +60,10 @@ class ClipVectorSizeCalculator : public CalculatorBase {
       cc->InputSidePackets().Index(0).Set<int>();
     }
 
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Open(CalculatorContext* cc) override {
+  mediapipe::Status Open(CalculatorContext* cc) override {
     cc->SetOffset(TimestampDiff(0));
     max_vec_size_ = cc->Options<::mediapipe::ClipVectorSizeCalculatorOptions>()
                         .max_vec_size();
@@ -72,23 +72,23 @@ class ClipVectorSizeCalculator : public CalculatorBase {
         !cc->InputSidePackets().Index(0).IsEmpty()) {
       max_vec_size_ = cc->InputSidePackets().Index(0).Get<int>();
     }
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Process(CalculatorContext* cc) override {
+  mediapipe::Status Process(CalculatorContext* cc) override {
     if (max_vec_size_ < 1) {
-      return absl::InternalError(
+      return mediapipe::InternalError(
           "max_vec_size should be greater than or equal to 1.");
     }
     if (cc->Inputs().Index(0).IsEmpty()) {
-      return absl::OkStatus();
+      return mediapipe::OkStatus();
     }
 
     return ClipVectorSize<T>(std::is_copy_constructible<T>(), cc);
   }
 
   template <typename U>
-  absl::Status ClipVectorSize(std::true_type, CalculatorContext* cc) {
+  mediapipe::Status ClipVectorSize(std::true_type, CalculatorContext* cc) {
     auto output = absl::make_unique<std::vector<U>>();
     const std::vector<U>& input_vector =
         cc->Inputs().Index(0).Get<std::vector<U>>();
@@ -100,23 +100,24 @@ class ClipVectorSizeCalculator : public CalculatorBase {
       }
     }
     cc->Outputs().Index(0).Add(output.release(), cc->InputTimestamp());
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
   template <typename U>
-  absl::Status ClipVectorSize(std::false_type, CalculatorContext* cc) {
+  mediapipe::Status ClipVectorSize(std::false_type, CalculatorContext* cc) {
     return ConsumeAndClipVectorSize<T>(std::is_move_constructible<U>(), cc);
   }
 
   template <typename U>
-  absl::Status ConsumeAndClipVectorSize(std::true_type, CalculatorContext* cc) {
+  mediapipe::Status ConsumeAndClipVectorSize(std::true_type,
+                                             CalculatorContext* cc) {
     auto output = absl::make_unique<std::vector<U>>();
-    absl::StatusOr<std::unique_ptr<std::vector<U>>> input_status =
+    mediapipe::StatusOr<std::unique_ptr<std::vector<U>>> input_status =
         cc->Inputs().Index(0).Value().Consume<std::vector<U>>();
 
     if (input_status.ok()) {
       std::unique_ptr<std::vector<U>> input_vector =
-          std::move(input_status).value();
+          std::move(input_status).ValueOrDie();
       auto begin_it = input_vector->begin();
       auto end_it = input_vector->end();
       if (max_vec_size_ < input_vector->size()) {
@@ -128,13 +129,13 @@ class ClipVectorSizeCalculator : public CalculatorBase {
       return input_status.status();
     }
     cc->Outputs().Index(0).Add(output.release(), cc->InputTimestamp());
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
   template <typename U>
-  absl::Status ConsumeAndClipVectorSize(std::false_type,
-                                        CalculatorContext* cc) {
-    return absl::InternalError(
+  mediapipe::Status ConsumeAndClipVectorSize(std::false_type,
+                                             CalculatorContext* cc) {
+    return mediapipe::InternalError(
         "Cannot copy or move input vectors and clip their size.");
   }
 

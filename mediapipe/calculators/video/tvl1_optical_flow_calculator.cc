@@ -74,14 +74,14 @@ cv::Mat ConvertToGrayscale(const cv::Mat& image) {
 //   num_threads: 10
 class Tvl1OpticalFlowCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc);
-  absl::Status Open(CalculatorContext* cc) override;
-  absl::Status Process(CalculatorContext* cc) override;
+  static mediapipe::Status GetContract(CalculatorContract* cc);
+  mediapipe::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
 
  private:
-  absl::Status CalculateOpticalFlow(const ImageFrame& current_frame,
-                                    const ImageFrame& next_frame,
-                                    OpticalFlowField* flow);
+  mediapipe::Status CalculateOpticalFlow(const ImageFrame& current_frame,
+                                         const ImageFrame& next_frame,
+                                         OpticalFlowField* flow);
   bool forward_requested_ = false;
   bool backward_requested_ = false;
   // Stores the idle DenseOpticalFlow objects.
@@ -93,10 +93,11 @@ class Tvl1OpticalFlowCalculator : public CalculatorBase {
   absl::Mutex mutex_;
 };
 
-absl::Status Tvl1OpticalFlowCalculator::GetContract(CalculatorContract* cc) {
+mediapipe::Status Tvl1OpticalFlowCalculator::GetContract(
+    CalculatorContract* cc) {
   if (!cc->Inputs().HasTag("FIRST_FRAME") ||
       !cc->Inputs().HasTag("SECOND_FRAME")) {
-    return absl::InvalidArgumentError(
+    return mediapipe::InvalidArgumentError(
         "Missing required input streams. Both FIRST_FRAME and SECOND_FRAME "
         "must be specified.");
   }
@@ -108,10 +109,10 @@ absl::Status Tvl1OpticalFlowCalculator::GetContract(CalculatorContract* cc) {
   if (cc->Outputs().HasTag("BACKWARD_FLOW")) {
     cc->Outputs().Tag("BACKWARD_FLOW").Set<OpticalFlowField>();
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status Tvl1OpticalFlowCalculator::Open(CalculatorContext* cc) {
+mediapipe::Status Tvl1OpticalFlowCalculator::Open(CalculatorContext* cc) {
   {
     absl::MutexLock lock(&mutex_);
     tvl1_computers_.emplace_back(cv::createOptFlow_DualTVL1());
@@ -123,10 +124,10 @@ absl::Status Tvl1OpticalFlowCalculator::Open(CalculatorContext* cc) {
     backward_requested_ = true;
   }
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status Tvl1OpticalFlowCalculator::Process(CalculatorContext* cc) {
+mediapipe::Status Tvl1OpticalFlowCalculator::Process(CalculatorContext* cc) {
   const ImageFrame& first_frame =
       cc->Inputs().Tag("FIRST_FRAME").Value().Get<ImageFrame>();
   const ImageFrame& second_frame =
@@ -147,10 +148,10 @@ absl::Status Tvl1OpticalFlowCalculator::Process(CalculatorContext* cc) {
         .Tag("BACKWARD_FLOW")
         .Add(backward_optical_flow_field.release(), cc->InputTimestamp());
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status Tvl1OpticalFlowCalculator::CalculateOpticalFlow(
+mediapipe::Status Tvl1OpticalFlowCalculator::CalculateOpticalFlow(
     const ImageFrame& current_frame, const ImageFrame& next_frame,
     OpticalFlowField* flow) {
   CHECK(flow);
@@ -183,7 +184,7 @@ absl::Status Tvl1OpticalFlowCalculator::CalculateOpticalFlow(
     absl::MutexLock lock(&mutex_);
     tvl1_computers_.push_back(tvl1_computer);
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 REGISTER_CALCULATOR(Tvl1OpticalFlowCalculator);

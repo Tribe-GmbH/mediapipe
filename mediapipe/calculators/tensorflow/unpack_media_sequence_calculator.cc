@@ -118,7 +118,7 @@ namespace mpms = mediapipe::mediasequence;
 // }
 class UnpackMediaSequenceCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc) {
+  static ::mediapipe::Status GetContract(CalculatorContract* cc) {
     const auto& options = cc->Options<UnpackMediaSequenceCalculatorOptions>();
     RET_CHECK(cc->InputSidePackets().HasTag(kSequenceExampleTag));
     cc->InputSidePackets().Tag(kSequenceExampleTag).Set<tf::SequenceExample>();
@@ -183,10 +183,10 @@ class UnpackMediaSequenceCalculator : public CalculatorBase {
         cc->Outputs().Tag(tag).Set<std::vector<float>>();
       }
     }
-    return absl::OkStatus();
+    return ::mediapipe::OkStatus();
   }
 
-  absl::Status Open(CalculatorContext* cc) override {
+  ::mediapipe::Status Open(CalculatorContext* cc) override {
     // Copy the packet to copy the otherwise inaccessible shared ptr.
     example_packet_holder_ = cc->InputSidePackets().Tag(kSequenceExampleTag);
     sequence_ = &example_packet_holder_.Get<tf::SequenceExample>();
@@ -335,10 +335,10 @@ class UnpackMediaSequenceCalculator : public CalculatorBase {
           .Set(MakePacket<double>(mpms::GetImageFrameRate(sequence)));
     }
 
-    return absl::OkStatus();
+    return ::mediapipe::OkStatus();
   }
 
-  absl::Status Process(CalculatorContext* cc) override {
+  ::mediapipe::Status Process(CalculatorContext* cc) override {
     if (timestamps_.empty()) {
       // This occurs when we only have metadata to unpack.
       LOG(INFO) << "only unpacking metadata because there are no timestamps.";
@@ -435,7 +435,7 @@ class UnpackMediaSequenceCalculator : public CalculatorBase {
 
     ++current_timestamp_index_;
     if (current_timestamp_index_ < timestamps_[last_timestamp_key_].size()) {
-      return absl::OkStatus();
+      return ::mediapipe::OkStatus();
     } else {
       return tool::StatusStop();
     }

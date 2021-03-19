@@ -26,11 +26,11 @@
 
 #include <cerrno>
 
+#include "mediapipe/framework/deps/canonical_errors.h"
 #include "mediapipe/framework/deps/file_path.h"
-#include "mediapipe/framework/port/canonical_errors.h"
-#include "mediapipe/framework/port/status.h"
-#include "mediapipe/framework/port/status_builder.h"
-#include "mediapipe/framework/port/status_macros.h"
+#include "mediapipe/framework/deps/status.h"
+#include "mediapipe/framework/deps/status_builder.h"
+#include "mediapipe/framework/deps/status_macros.h"
 
 namespace mediapipe {
 namespace file {
@@ -138,8 +138,8 @@ class DirectoryListing {
 
 }  // namespace
 
-absl::Status GetContents(absl::string_view file_name, std::string* output,
-                         bool read_as_binary) {
+mediapipe::Status GetContents(absl::string_view file_name, std::string* output,
+                              bool read_as_binary) {
   FILE* fp = fopen(file_name.data(), read_as_binary ? "rb" : "r");
   if (fp == NULL) {
     return mediapipe::InvalidArgumentErrorBuilder(MEDIAPIPE_LOC)
@@ -157,11 +157,11 @@ absl::Status GetContents(absl::string_view file_name, std::string* output,
     output->append(std::string(buf, ret));
   }
   fclose(fp);
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status SetContents(absl::string_view file_name,
-                         absl::string_view content) {
+mediapipe::Status SetContents(absl::string_view file_name,
+                              absl::string_view content) {
   FILE* fp = fopen(file_name.data(), "w");
   if (fp == NULL) {
     return mediapipe::InvalidArgumentErrorBuilder(MEDIAPIPE_LOC)
@@ -175,12 +175,12 @@ absl::Status SetContents(absl::string_view file_name,
            << "Error while writing file: " << file_name
            << ". Error message: " << strerror(write_error);
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status MatchInTopSubdirectories(const std::string& parent_directory,
-                                      const std::string& file_name,
-                                      std::vector<std::string>* results) {
+mediapipe::Status MatchInTopSubdirectories(const std::string& parent_directory,
+                                           const std::string& file_name,
+                                           std::vector<std::string>* results) {
   DirectoryListing parent_listing(parent_directory);
 
   while (parent_listing.HasNextEntry()) {
@@ -194,12 +194,12 @@ absl::Status MatchInTopSubdirectories(const std::string& parent_directory,
       }
     }
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status MatchFileTypeInDirectory(const std::string& directory,
-                                      const std::string& file_suffix,
-                                      std::vector<std::string>* results) {
+mediapipe::Status MatchFileTypeInDirectory(const std::string& directory,
+                                           const std::string& file_suffix,
+                                           std::vector<std::string>* results) {
   DirectoryListing directory_listing(directory);
 
   while (directory_listing.HasNextEntry()) {
@@ -209,21 +209,21 @@ absl::Status MatchFileTypeInDirectory(const std::string& directory,
     }
   }
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status Exists(absl::string_view file_name) {
+mediapipe::Status Exists(absl::string_view file_name) {
   struct stat buffer;
   int status;
   status = stat(std::string(file_name).c_str(), &buffer);
   if (status == 0) {
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
   switch (errno) {
     case EACCES:
       return mediapipe::PermissionDeniedError("Insufficient permissions.");
     default:
-      return absl::NotFoundError("The path does not exist.");
+      return mediapipe::NotFoundError("The path does not exist.");
   }
 }
 
@@ -235,9 +235,9 @@ int mkdir(std::string path) {
 int mkdir(std::string path) { return _mkdir(path.c_str()); }
 #endif
 
-absl::Status RecursivelyCreateDir(absl::string_view path) {
+mediapipe::Status RecursivelyCreateDir(absl::string_view path) {
   if (path.empty() || Exists(path).ok()) {
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
   auto split_path = file::SplitPath(path);
   MP_RETURN_IF_ERROR(RecursivelyCreateDir(split_path.first));
@@ -246,10 +246,10 @@ absl::Status RecursivelyCreateDir(absl::string_view path) {
       case EACCES:
         return mediapipe::PermissionDeniedError("Insufficient permissions.");
       default:
-        return absl::UnavailableError("Failed to create directory.");
+        return mediapipe::UnavailableError("Failed to create directory.");
     }
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 }  // namespace file

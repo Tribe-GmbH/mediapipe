@@ -51,8 +51,8 @@ const HolderBase* GetHolder(const Packet& packet) {
   return packet.holder_.get();
 }
 
-absl::StatusOr<Packet> PacketFromDynamicProto(const std::string& type_name,
-                                              const std::string& serialized) {
+mediapipe::StatusOr<Packet> PacketFromDynamicProto(
+    const std::string& type_name, const std::string& serialized) {
   ASSIGN_OR_RETURN(
       auto message_holder,
       packet_internal::MessageHolderRegistry::CreateByName(type_name));
@@ -105,16 +105,16 @@ std::string Packet::DebugString() const {
   return result;
 }
 
-absl::Status Packet::ValidateAsProtoMessageLite() const {
+mediapipe::Status Packet::ValidateAsProtoMessageLite() const {
   if (ABSL_PREDICT_FALSE(IsEmpty())) {
-    return absl::InternalError("Packet is empty.");
+    return mediapipe::InternalError("Packet is empty.");
   }
   if (ABSL_PREDICT_FALSE(holder_->GetProtoMessageLite() == nullptr)) {
-    return absl::InvalidArgumentError(
+    return mediapipe::InvalidArgumentError(
         absl::StrCat("The Packet stores \"", holder_->DebugTypeName(), "\"",
                      "which is not convertible to proto_ns::MessageLite."));
   } else {
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 }
 
@@ -129,7 +129,7 @@ const proto_ns::MessageLite& Packet::GetProtoMessageLite() const {
 StatusOr<std::vector<const proto_ns::MessageLite*>>
 Packet::GetVectorOfProtoMessageLitePtrs() {
   if (holder_ == nullptr) {
-    return absl::InternalError("Packet is empty.");
+    return mediapipe::InternalError("Packet is empty.");
   }
   return holder_->GetVectorOfProtoMessageLite();
 }

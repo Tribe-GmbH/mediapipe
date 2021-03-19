@@ -328,6 +328,8 @@ TEST_F(GraphProfilerTestPeer, InitializeConfigWithoutStreamLatency) {
 
 // Tests that Initialize() reads all the configs defined in the graph
 // definition.
+// The best way to understand this test in case of debugging is to visualize
+// the graph using go/mediapipe-vis.
 TEST_F(GraphProfilerTestPeer, Initialize) {
   InitializeProfilerWithGraphConfig(R"(
     profiler_config {
@@ -1174,7 +1176,7 @@ TEST(GraphProfilerTest, ParallelReads) {
   MP_ASSERT_OK(graph.ObserveOutputStream("out_1", [&](const Packet& packet) {
     absl::MutexLock lock(&out_1_mutex);
     out_1_packets.push_back(packet);
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }));
   MP_EXPECT_OK(graph.StartRun(
       {{"range_step", MakePacket<std::pair<uint32, uint32>>(1000, 1)}}));

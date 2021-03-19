@@ -61,23 +61,23 @@ class LandmarksFilter {
  public:
   virtual ~LandmarksFilter() = default;
 
-  virtual absl::Status Reset() { return absl::OkStatus(); }
+  virtual mediapipe::Status Reset() { return mediapipe::OkStatus(); }
 
-  virtual absl::Status Apply(const NormalizedLandmarkList& in_landmarks,
-                             const std::pair<int, int>& image_size,
-                             const absl::Duration& timestamp,
-                             NormalizedLandmarkList* out_landmarks) = 0;
+  virtual mediapipe::Status Apply(const NormalizedLandmarkList& in_landmarks,
+                                  const std::pair<int, int>& image_size,
+                                  const absl::Duration& timestamp,
+                                  NormalizedLandmarkList* out_landmarks) = 0;
 };
 
 // Returns landmarks as is without smoothing.
 class NoFilter : public LandmarksFilter {
  public:
-  absl::Status Apply(const NormalizedLandmarkList& in_landmarks,
-                     const std::pair<int, int>& image_size,
-                     const absl::Duration& timestamp,
-                     NormalizedLandmarkList* out_landmarks) override {
+  mediapipe::Status Apply(const NormalizedLandmarkList& in_landmarks,
+                          const std::pair<int, int>& image_size,
+                          const absl::Duration& timestamp,
+                          NormalizedLandmarkList* out_landmarks) override {
     *out_landmarks = in_landmarks;
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 };
 
@@ -90,17 +90,17 @@ class VelocityFilter : public LandmarksFilter {
         velocity_scale_(velocity_scale),
         min_allowed_object_scale_(min_allowed_object_scale) {}
 
-  absl::Status Reset() override {
+  mediapipe::Status Reset() override {
     x_filters_.clear();
     y_filters_.clear();
     z_filters_.clear();
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Apply(const NormalizedLandmarkList& in_landmarks,
-                     const std::pair<int, int>& image_size,
-                     const absl::Duration& timestamp,
-                     NormalizedLandmarkList* out_landmarks) override {
+  mediapipe::Status Apply(const NormalizedLandmarkList& in_landmarks,
+                          const std::pair<int, int>& image_size,
+                          const absl::Duration& timestamp,
+                          NormalizedLandmarkList* out_landmarks) override {
     // Get image size.
     int image_width;
     int image_height;
@@ -113,7 +113,7 @@ class VelocityFilter : public LandmarksFilter {
         GetObjectScale(in_landmarks, image_width, image_height);
     if (object_scale < min_allowed_object_scale_) {
       *out_landmarks = in_landmarks;
-      return absl::OkStatus();
+      return mediapipe::OkStatus();
     }
     const float value_scale = 1.0f / object_scale;
 
@@ -138,18 +138,18 @@ class VelocityFilter : public LandmarksFilter {
                           image_width);
     }
 
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
  private:
   // Initializes filters for the first time or after Reset. If initialized then
   // check the size.
-  absl::Status InitializeFiltersIfEmpty(const int n_landmarks) {
+  mediapipe::Status InitializeFiltersIfEmpty(const int n_landmarks) {
     if (!x_filters_.empty()) {
       RET_CHECK_EQ(x_filters_.size(), n_landmarks);
       RET_CHECK_EQ(y_filters_.size(), n_landmarks);
       RET_CHECK_EQ(z_filters_.size(), n_landmarks);
-      return absl::OkStatus();
+      return mediapipe::OkStatus();
     }
 
     x_filters_.resize(n_landmarks,
@@ -159,7 +159,7 @@ class VelocityFilter : public LandmarksFilter {
     z_filters_.resize(n_landmarks,
                       RelativeVelocityFilter(window_size_, velocity_scale_));
 
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
   int window_size_;
@@ -202,26 +202,27 @@ class VelocityFilter : public LandmarksFilter {
 //
 class LandmarksSmoothingCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc);
-  absl::Status Open(CalculatorContext* cc) override;
-  absl::Status Process(CalculatorContext* cc) override;
+  static mediapipe::Status GetContract(CalculatorContract* cc);
+  mediapipe::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
 
  private:
   LandmarksFilter* landmarks_filter_;
 };
 REGISTER_CALCULATOR(LandmarksSmoothingCalculator);
 
-absl::Status LandmarksSmoothingCalculator::GetContract(CalculatorContract* cc) {
+mediapipe::Status LandmarksSmoothingCalculator::GetContract(
+    CalculatorContract* cc) {
   cc->Inputs().Tag(kNormalizedLandmarksTag).Set<NormalizedLandmarkList>();
   cc->Inputs().Tag(kImageSizeTag).Set<std::pair<int, int>>();
   cc->Outputs()
       .Tag(kNormalizedFilteredLandmarksTag)
       .Set<NormalizedLandmarkList>();
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status LandmarksSmoothingCalculator::Open(CalculatorContext* cc) {
+mediapipe::Status LandmarksSmoothingCalculator::Open(CalculatorContext* cc) {
   cc->SetOffset(TimestampDiff(0));
 
   // Pick landmarks filter.
@@ -238,15 +239,15 @@ absl::Status LandmarksSmoothingCalculator::Open(CalculatorContext* cc) {
         << "Landmarks filter is either not specified or not supported";
   }
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status LandmarksSmoothingCalculator::Process(CalculatorContext* cc) {
+mediapipe::Status LandmarksSmoothingCalculator::Process(CalculatorContext* cc) {
   // Check that landmarks are not empty and reset the filter if so.
   // Don't emit an empty packet for this timestamp.
   if (cc->Inputs().Tag(kNormalizedLandmarksTag).IsEmpty()) {
     MP_RETURN_IF_ERROR(landmarks_filter_->Reset());
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
   const auto& in_landmarks =
@@ -264,7 +265,7 @@ absl::Status LandmarksSmoothingCalculator::Process(CalculatorContext* cc) {
       .Tag(kNormalizedFilteredLandmarksTag)
       .Add(out_landmarks.release(), cc->InputTimestamp());
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 }  // namespace mediapipe

@@ -201,7 +201,7 @@ Status TensorsToDetections(const ::tensorflow::Tensor& num_detections,
     }
     detections->emplace_back(detection);
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 }  // namespace mediapipe

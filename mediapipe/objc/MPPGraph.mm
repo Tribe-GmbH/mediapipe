@@ -213,7 +213,7 @@ void CallFrameDelegate(void* wrapperVoid, const std::string& streamName,
 }
 
 - (BOOL)startWithError:(NSError**)error {
-  absl::Status status = [self performStart];
+  ::mediapipe::Status status = [self performStart];
   if (!status.ok()) {
     if (error) {
       *error = [NSError gus_errorWithStatus:status];
@@ -224,8 +224,8 @@ void CallFrameDelegate(void* wrapperVoid, const std::string& streamName,
   return YES;
 }
 
-- (absl::Status)performStart {
-  absl::Status status = _graph->Initialize(_config);
+- (::mediapipe::Status)performStart {
+  ::mediapipe::Status status = _graph->Initialize(_config);
   if (!status.ok()) {
     return status;
   }
@@ -251,13 +251,13 @@ void CallFrameDelegate(void* wrapperVoid, const std::string& streamName,
 }
 
 - (BOOL)closeInputStream:(const std::string&)inputName error:(NSError**)error {
-  absl::Status status = _graph->CloseInputStream(inputName);
+  ::mediapipe::Status status = _graph->CloseInputStream(inputName);
   if (!status.ok() && error) *error = [NSError gus_errorWithStatus:status];
   return status.ok();
 }
 
 - (BOOL)closeAllInputStreamsWithError:(NSError**)error {
-  absl::Status status = _graph->CloseAllInputStreams();
+  ::mediapipe::Status status = _graph->CloseAllInputStreams();
   if (!status.ok() && error) *error = [NSError gus_errorWithStatus:status];
   return status.ok();
 }
@@ -268,14 +268,14 @@ void CallFrameDelegate(void* wrapperVoid, const std::string& streamName,
   // TODO: is this too heavy-handed? Maybe a warning would be fine.
   _GTMDevAssert(![NSThread isMainThread] || (NSClassFromString(@"XCTest")),
                 @"waitUntilDoneWithError: should not be called on the main thread");
-  absl::Status status = _graph->WaitUntilDone();
+  ::mediapipe::Status status = _graph->WaitUntilDone();
   _started = NO;
   if (!status.ok() && error) *error = [NSError gus_errorWithStatus:status];
   return status.ok();
 }
 
 - (BOOL)waitUntilIdleWithError:(NSError**)error {
-  absl::Status status = _graph->WaitUntilIdle();
+  ::mediapipe::Status status = _graph->WaitUntilIdle();
   if (!status.ok() && error) *error = [NSError gus_errorWithStatus:status];
   return status.ok();
 }
@@ -283,7 +283,7 @@ void CallFrameDelegate(void* wrapperVoid, const std::string& streamName,
 - (BOOL)movePacket:(mediapipe::Packet&&)packet
         intoStream:(const std::string&)streamName
              error:(NSError**)error {
-  absl::Status status = _graph->AddPacketToInputStream(streamName, std::move(packet));
+  ::mediapipe::Status status = _graph->AddPacketToInputStream(streamName, std::move(packet));
   if (!status.ok() && error) *error = [NSError gus_errorWithStatus:status];
   return status.ok();
 }
@@ -291,7 +291,7 @@ void CallFrameDelegate(void* wrapperVoid, const std::string& streamName,
 - (BOOL)sendPacket:(const mediapipe::Packet&)packet
         intoStream:(const std::string&)streamName
              error:(NSError**)error {
-  absl::Status status = _graph->AddPacketToInputStream(streamName, packet);
+  ::mediapipe::Status status = _graph->AddPacketToInputStream(streamName, packet);
   if (!status.ok() && error) *error = [NSError gus_errorWithStatus:status];
   return status.ok();
 }
@@ -299,7 +299,7 @@ void CallFrameDelegate(void* wrapperVoid, const std::string& streamName,
 - (BOOL)setMaxQueueSize:(int)maxQueueSize
               forStream:(const std::string&)streamName
                   error:(NSError**)error {
-  absl::Status status = _graph->SetInputStreamMaxQueueSize(streamName, maxQueueSize);
+  ::mediapipe::Status status = _graph->SetInputStreamMaxQueueSize(streamName, maxQueueSize);
   if (!status.ok() && error) *error = [NSError gus_errorWithStatus:status];
   return status.ok();
 }
@@ -396,7 +396,7 @@ void CallFrameDelegate(void* wrapperVoid, const std::string& streamName,
   NSString* extensionString;
   (void)gpu_resources->gl_context()->Run([&extensionString]{
     extensionString = [NSString stringWithUTF8String:(char*)glGetString(GL_EXTENSIONS)];
-    return absl::OkStatus();
+    return ::mediapipe::OkStatus();
   });
 
   NSArray* extensions = [extensionString componentsSeparatedByCharactersInSet:

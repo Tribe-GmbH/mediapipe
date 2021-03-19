@@ -48,17 +48,17 @@ namespace mediapipe {
 // TODO: support decoding multiple streams.
 class AudioDecoderCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc);
+  static mediapipe::Status GetContract(CalculatorContract* cc);
 
-  absl::Status Open(CalculatorContext* cc) override;
-  absl::Status Process(CalculatorContext* cc) override;
-  absl::Status Close(CalculatorContext* cc) override;
+  mediapipe::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
+  mediapipe::Status Close(CalculatorContext* cc) override;
 
  private:
   std::unique_ptr<AudioDecoder> decoder_;
 };
 
-absl::Status AudioDecoderCalculator::GetContract(CalculatorContract* cc) {
+mediapipe::Status AudioDecoderCalculator::GetContract(CalculatorContract* cc) {
   cc->InputSidePackets().Tag("INPUT_FILE_PATH").Set<std::string>();
   if (cc->InputSidePackets().HasTag("OPTIONS")) {
     cc->InputSidePackets().Tag("OPTIONS").Set<mediapipe::AudioDecoderOptions>();
@@ -67,10 +67,10 @@ absl::Status AudioDecoderCalculator::GetContract(CalculatorContract* cc) {
   if (cc->Outputs().HasTag("AUDIO_HEADER")) {
     cc->Outputs().Tag("AUDIO_HEADER").SetNone();
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status AudioDecoderCalculator::Open(CalculatorContext* cc) {
+mediapipe::Status AudioDecoderCalculator::Open(CalculatorContext* cc) {
   const std::string& input_file_path =
       cc->InputSidePackets().Tag("INPUT_FILE_PATH").Get<std::string>();
   const auto& decoder_options =
@@ -87,10 +87,10 @@ absl::Status AudioDecoderCalculator::Open(CalculatorContext* cc) {
     cc->Outputs().Tag("AUDIO_HEADER").SetHeader(Adopt(header.release()));
   }
   cc->Outputs().Tag("AUDIO_HEADER").Close();
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status AudioDecoderCalculator::Process(CalculatorContext* cc) {
+mediapipe::Status AudioDecoderCalculator::Process(CalculatorContext* cc) {
   Packet data;
   int options_index = -1;
   auto status = decoder_->GetData(&options_index, &data);
@@ -100,7 +100,7 @@ absl::Status AudioDecoderCalculator::Process(CalculatorContext* cc) {
   return status;
 }
 
-absl::Status AudioDecoderCalculator::Close(CalculatorContext* cc) {
+mediapipe::Status AudioDecoderCalculator::Close(CalculatorContext* cc) {
   return decoder_->Close();
 }
 

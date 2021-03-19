@@ -50,10 +50,10 @@ class FeatureDetectorCalculator : public CalculatorBase {
  public:
   ~FeatureDetectorCalculator() override = default;
 
-  static absl::Status GetContract(CalculatorContract* cc);
+  static mediapipe::Status GetContract(CalculatorContract* cc);
 
-  absl::Status Open(CalculatorContext* cc) override;
-  absl::Status Process(CalculatorContext* cc) override;
+  mediapipe::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
 
  private:
   FeatureDetectorCalculatorOptions options_;
@@ -71,7 +71,8 @@ class FeatureDetectorCalculator : public CalculatorBase {
 
 REGISTER_CALCULATOR(FeatureDetectorCalculator);
 
-absl::Status FeatureDetectorCalculator::GetContract(CalculatorContract* cc) {
+mediapipe::Status FeatureDetectorCalculator::GetContract(
+    CalculatorContract* cc) {
   if (cc->Inputs().HasTag("IMAGE")) {
     cc->Inputs().Tag("IMAGE").Set<ImageFrame>();
   }
@@ -84,10 +85,10 @@ absl::Status FeatureDetectorCalculator::GetContract(CalculatorContract* cc) {
   if (cc->Outputs().HasTag("PATCHES")) {
     cc->Outputs().Tag("PATCHES").Set<std::vector<TfLiteTensor>>();
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status FeatureDetectorCalculator::Open(CalculatorContext* cc) {
+mediapipe::Status FeatureDetectorCalculator::Open(CalculatorContext* cc) {
   options_ =
       tool::RetrieveOptions(cc->Options(), cc->InputSidePackets(), kOptionsTag)
           .GetExtension(FeatureDetectorCalculatorOptions::ext);
@@ -96,14 +97,14 @@ absl::Status FeatureDetectorCalculator::Open(CalculatorContext* cc) {
       options_.pyramid_level(), kPatchSize - 1, 0, 2, cv::ORB::FAST_SCORE);
   pool_ = absl::make_unique<mediapipe::ThreadPool>("ThreadPool", kNumThreads);
   pool_->StartWorkers();
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status FeatureDetectorCalculator::Process(CalculatorContext* cc) {
+mediapipe::Status FeatureDetectorCalculator::Process(CalculatorContext* cc) {
   const Timestamp& timestamp = cc->InputTimestamp();
   if (timestamp == Timestamp::PreStream()) {
     // Indicator packet.
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
   InputStream* input_frame = &(cc->Inputs().Tag("IMAGE"));
   cv::Mat input_view = formats::MatView(&input_frame->Get<ImageFrame>());
@@ -175,7 +176,7 @@ absl::Status FeatureDetectorCalculator::Process(CalculatorContext* cc) {
     cc->Outputs().Tag("PATCHES").Add(patches.release(), timestamp);
   }
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 void FeatureDetectorCalculator::ComputeImagePyramid(

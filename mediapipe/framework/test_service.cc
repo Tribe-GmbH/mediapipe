@@ -19,26 +19,26 @@ namespace mediapipe {
 const GraphService<TestServiceObject> kTestService("test_service");
 const GraphService<int> kAnotherService("another_service");
 
-absl::Status TestServiceCalculator::GetContract(CalculatorContract* cc) {
+mediapipe::Status TestServiceCalculator::GetContract(CalculatorContract* cc) {
   cc->Inputs().Index(0).Set<int>();
   cc->Outputs().Index(0).SetSameAs(&cc->Inputs().Index(0));
   // This service will be required. The graph won't start without it.
   cc->UseService(kTestService);
   // This service is optional for this calculator.
   cc->UseService(kAnotherService).Optional();
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TestServiceCalculator::Open(CalculatorContext* cc) {
+mediapipe::Status TestServiceCalculator::Open(CalculatorContext* cc) {
   cc->SetOffset(TimestampDiff(0));
   // For an optional service, check whether it's available.
   if (cc->Service(kAnotherService).IsAvailable()) {
     optional_bias_ = cc->Service(kAnotherService).GetObject();
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TestServiceCalculator::Process(CalculatorContext* cc) {
+mediapipe::Status TestServiceCalculator::Process(CalculatorContext* cc) {
   int value = cc->Inputs().Index(0).Value().Get<int>();
   // A required service is sure to be available, so we can just GetObject.
   TestServiceObject& service_object = cc->Service(kTestService).GetObject();
@@ -46,7 +46,7 @@ absl::Status TestServiceCalculator::Process(CalculatorContext* cc) {
   service_object["count"] += 1;
   int x = value + delta + optional_bias_;
   cc->Outputs().Index(0).Add(new int(x), cc->InputTimestamp());
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 REGISTER_CALCULATOR(TestServiceCalculator);

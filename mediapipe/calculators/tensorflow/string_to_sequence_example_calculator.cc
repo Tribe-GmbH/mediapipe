@@ -44,15 +44,15 @@ constexpr char kSequenceExample[] = "SEQUENCE_EXAMPLE";
 
 class StringToSequenceExampleCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc);
-  absl::Status Open(CalculatorContext* cc) override;
-  absl::Status Process(CalculatorContext* cc) override;
-  absl::Status Close(CalculatorContext* cc) override;
+  static mediapipe::Status GetContract(CalculatorContract* cc);
+  mediapipe::Status Open(CalculatorContext* cc) override;
+  mediapipe::Status Process(CalculatorContext* cc) override;
+  mediapipe::Status Close(CalculatorContext* cc) override;
 };
 
 REGISTER_CALCULATOR(StringToSequenceExampleCalculator);
 
-absl::Status StringToSequenceExampleCalculator::GetContract(
+mediapipe::Status StringToSequenceExampleCalculator::GetContract(
     CalculatorContract* cc) {
   if (cc->InputSidePackets().HasTag(kString)) {
     cc->InputSidePackets().Tag(kString).Set<std::string>();
@@ -62,10 +62,11 @@ absl::Status StringToSequenceExampleCalculator::GetContract(
     cc->InputSidePackets().Tag(kSequenceExample).Set<tf::SequenceExample>();
     cc->OutputSidePackets().Tag(kString).Set<std::string>();
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status StringToSequenceExampleCalculator::Open(CalculatorContext* cc) {
+mediapipe::Status StringToSequenceExampleCalculator::Open(
+    CalculatorContext* cc) {
   if (cc->InputSidePackets().HasTag(kString)) {
     auto string_value = cc->InputSidePackets().Tag(kString).Get<std::string>();
     auto example = absl::make_unique<tf::SequenceExample>();
@@ -74,14 +75,16 @@ absl::Status StringToSequenceExampleCalculator::Open(CalculatorContext* cc) {
         .Tag(kSequenceExample)
         .Set(mediapipe::Adopt(example.release()));
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status StringToSequenceExampleCalculator::Process(CalculatorContext* cc) {
-  return absl::OkStatus();
+mediapipe::Status StringToSequenceExampleCalculator::Process(
+    CalculatorContext* cc) {
+  return mediapipe::OkStatus();
 }
 
-absl::Status StringToSequenceExampleCalculator::Close(CalculatorContext* cc) {
+mediapipe::Status StringToSequenceExampleCalculator::Close(
+    CalculatorContext* cc) {
   if (cc->InputSidePackets().HasTag(kSequenceExample)) {
     const auto& example =
         cc->InputSidePackets().Tag(kSequenceExample).Get<tf::SequenceExample>();
@@ -90,7 +93,7 @@ absl::Status StringToSequenceExampleCalculator::Close(CalculatorContext* cc) {
     cc->OutputSidePackets().Tag(kString).Set(
         mediapipe::Adopt(string_value.release()));
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 }  // namespace mediapipe

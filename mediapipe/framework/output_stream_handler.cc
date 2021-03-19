@@ -20,16 +20,16 @@
 
 namespace mediapipe {
 
-absl::Status OutputStreamHandler::InitializeOutputStreamManagers(
+mediapipe::Status OutputStreamHandler::InitializeOutputStreamManagers(
     OutputStreamManager* flat_output_stream_managers) {
   for (CollectionItemId id = output_stream_managers_.BeginId();
        id < output_stream_managers_.EndId(); ++id) {
     output_stream_managers_.Get(id) = &flat_output_stream_managers[id.value()];
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status OutputStreamHandler::SetupOutputShards(
+mediapipe::Status OutputStreamHandler::SetupOutputShards(
     OutputStreamShardSet* output_shards) {
   CHECK(output_shards);
   for (CollectionItemId id = output_stream_managers_.BeginId();
@@ -37,11 +37,11 @@ absl::Status OutputStreamHandler::SetupOutputShards(
     OutputStreamManager* manager = output_stream_managers_.Get(id);
     output_shards->Get(id).SetSpec(manager->Spec());
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 void OutputStreamHandler::PrepareForRun(
-    const std::function<void(absl::Status)>& error_callback) {
+    const std::function<void(mediapipe::Status)>& error_callback) {
   for (auto& manager : output_stream_managers_) {
     manager->PrepareForRun(error_callback);
   }

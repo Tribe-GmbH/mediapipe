@@ -29,9 +29,9 @@
 #include "mediapipe/java/com/google/mediapipe/framework/jni/colorspace.h"
 #include "mediapipe/java/com/google/mediapipe/framework/jni/graph.h"
 #include "mediapipe/java/com/google/mediapipe/framework/jni/jni_util.h"
-#if !MEDIAPIPE_DISABLE_GPU
+#ifndef MEDIAPIPE_DISABLE_GPU
 #include "mediapipe/gpu/gl_calculator_helper.h"
-#endif  // !MEDIAPIPE_DISABLE_GPU
+#endif  // !defined(MEDIAPIPE_DISABLE_GPU)
 
 namespace {
 using mediapipe::android::SerializedMessageIds;
@@ -300,7 +300,7 @@ JNIEXPORT jlong JNICALL PACKET_CREATOR_METHOD(nativeCreateMatrix)(
   return CreatePacketWithContext(context, packet);
 }
 
-#if !MEDIAPIPE_DISABLE_GPU
+#ifndef MEDIAPIPE_DISABLE_GPU
 
 JNIEXPORT jlong JNICALL PACKET_CREATOR_METHOD(nativeCreateGpuBuffer)(
     JNIEnv* env, jobject thiz, jlong context, jint name, jint width,
@@ -351,7 +351,7 @@ JNIEXPORT jlong JNICALL PACKET_CREATOR_METHOD(nativeCreateGpuBuffer)(
   return CreatePacketWithContext(context, packet);
 }
 
-#endif  // !MEDIAPIPE_DISABLE_GPU
+#endif  // !defined(MEDIAPIPE_DISABLE_GPU)
 
 // TODO: Add vector creators.
 
@@ -450,7 +450,7 @@ JNIEXPORT jlong JNICALL PACKET_CREATOR_METHOD(nativeCreateProto)(JNIEnv* env,
   auto packet_or = mediapipe::packet_internal::PacketFromDynamicProto(
       type_name, std::string((char*)value_ref, value_len));
   if (!ThrowIfError(env, packet_or.status())) {
-    packet = packet_or.value();
+    packet = packet_or.ValueOrDie();
   }
   env->ReleaseByteArrayElements(value_array, value_ref, JNI_ABORT);
   return CreatePacketWithContext(context, packet);

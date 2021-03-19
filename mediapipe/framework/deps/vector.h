@@ -241,7 +241,7 @@ class BasicVector {
     return out << "]";
   }
 
-  // These are only public for technical reasons.
+  // These are only public for technical reasons (see cl/121145822).
   template <typename K>
   D MulScalarInternal(const K& k) const {
     return Generate([k](const T& x) { return k * x; }, AsD());

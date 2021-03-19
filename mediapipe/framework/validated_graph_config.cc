@@ -114,12 +114,13 @@ std::string DebugName(const CalculatorGraphConfig& config,
 //
 // Converts the graph-level num_threads field to an ExecutorConfig for the
 // default executor with the executor type unspecified.
-absl::Status AddPredefinedExecutorConfigs(CalculatorGraphConfig* graph_config) {
+mediapipe::Status AddPredefinedExecutorConfigs(
+    CalculatorGraphConfig* graph_config) {
   bool has_default_executor_config = false;
   for (ExecutorConfig& executor_config : *graph_config->mutable_executor()) {
     if (executor_config.name().empty()) {
       if (graph_config->num_threads()) {
-        return absl::InvalidArgumentError(
+        return mediapipe::InvalidArgumentError(
             "ExecutorConfig for the default executor and the graph-level "
             "num_threads field should not both be specified.");
       }
@@ -136,10 +137,10 @@ absl::Status AddPredefinedExecutorConfigs(CalculatorGraphConfig* graph_config) {
       graph_config->clear_num_threads();
     }
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status PerformBasicTransforms(
+mediapipe::Status PerformBasicTransforms(
     const CalculatorGraphConfig& input_graph_config,
     const GraphRegistry* graph_registry,
     CalculatorGraphConfig* output_graph_config) {
@@ -163,7 +164,7 @@ absl::Status PerformBasicTransforms(
     }
   }
 
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 }  // namespace
@@ -186,7 +187,7 @@ std::string NodeTypeInfo::NodeTypeToString(NodeType node_type) {
              << static_cast<int>(node_type);
 }
 
-absl::Status NodeTypeInfo::Initialize(
+mediapipe::Status NodeTypeInfo::Initialize(
     const ValidatedGraphConfig& validated_graph,
     const CalculatorGraphConfig::Node& node, int node_index) {
   node_.type = NodeType::CALCULATOR;
@@ -244,8 +245,8 @@ absl::Status NodeTypeInfo::Initialize(
       << node_class << ": ";
 
   // Validate result of FillExpectations or GetContract.
-  std::vector<absl::Status> statuses;
-  absl::Status status = ValidatePacketTypeSet(contract_.Inputs());
+  std::vector<mediapipe::Status> statuses;
+  mediapipe::Status status = ValidatePacketTypeSet(contract_.Inputs());
   if (!status.ok()) {
     statuses.push_back(
         mediapipe::StatusBuilder(std::move(status), MEDIAPIPE_LOC).SetPrepend()
@@ -269,10 +270,10 @@ absl::Status NodeTypeInfo::Initialize(
                      " failed to validate: "),
         statuses);
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status NodeTypeInfo::Initialize(
+mediapipe::Status NodeTypeInfo::Initialize(
     const ValidatedGraphConfig& validated_graph,
     const PacketGeneratorConfig& node, int node_index) {
   node_.type = NodeType::PACKET_GENERATOR;
@@ -296,8 +297,9 @@ absl::Status NodeTypeInfo::Initialize(
   }
 
   // Validate result of FillExpectations.
-  std::vector<absl::Status> statuses;
-  absl::Status status = ValidatePacketTypeSet(contract_.InputSidePackets());
+  std::vector<mediapipe::Status> statuses;
+  mediapipe::Status status =
+      ValidatePacketTypeSet(contract_.InputSidePackets());
   if (!status.ok()) {
     statuses.push_back(std::move(status));
   }
@@ -310,10 +312,10 @@ absl::Status NodeTypeInfo::Initialize(
         absl::StrCat(node_class, "::FillExpectations failed to validate: "),
         statuses);
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status NodeTypeInfo::Initialize(
+mediapipe::Status NodeTypeInfo::Initialize(
     const ValidatedGraphConfig& validated_graph,
     const StatusHandlerConfig& node, int node_index) {
   node_.type = NodeType::STATUS_HANDLER;
@@ -339,10 +341,10 @@ absl::Status NodeTypeInfo::Initialize(
   MP_RETURN_IF_ERROR(ValidatePacketTypeSet(contract_.InputSidePackets()))
           .SetPrepend()
       << node_class << "::FillExpectations failed to validate: ";
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status ValidatedGraphConfig::Initialize(
+mediapipe::Status ValidatedGraphConfig::Initialize(
     const CalculatorGraphConfig& input_config,
     const GraphRegistry* graph_registry) {
   RET_CHECK(!initialized_)
@@ -424,20 +426,20 @@ absl::Status ValidatedGraphConfig::Initialize(
           << config_.DebugString();
 #endif
   initialized_ = true;
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status ValidatedGraphConfig::Initialize(
+mediapipe::Status ValidatedGraphConfig::Initialize(
     const std::string& graph_type, const Subgraph::SubgraphOptions* options,
     const GraphRegistry* graph_registry) {
   graph_registry =
       graph_registry ? graph_registry : &GraphRegistry::global_graph_registry;
   auto status_or_config = graph_registry->CreateByName("", graph_type, options);
   MP_RETURN_IF_ERROR(status_or_config.status());
-  return Initialize(status_or_config.value(), graph_registry);
+  return Initialize(status_or_config.ValueOrDie(), graph_registry);
 }
 
-absl::Status ValidatedGraphConfig::Initialize(
+mediapipe::Status ValidatedGraphConfig::Initialize(
     const std::vector<CalculatorGraphConfig>& input_configs,
     const std::vector<CalculatorGraphTemplate>& input_templates,
     const std::string& graph_type, const Subgraph::SubgraphOptions* options) {
@@ -451,12 +453,12 @@ absl::Status ValidatedGraphConfig::Initialize(
   return Initialize(graph_type, options, &graph_registry);
 }
 
-absl::Status ValidatedGraphConfig::InitializeCalculatorInfo() {
-  std::vector<absl::Status> statuses;
+mediapipe::Status ValidatedGraphConfig::InitializeCalculatorInfo() {
+  std::vector<mediapipe::Status> statuses;
   calculators_.reserve(config_.node_size());
   for (const auto& node : config_.node()) {
     calculators_.emplace_back();
-    absl::Status status =
+    mediapipe::Status status =
         calculators_.back().Initialize(*this, node, calculators_.size() - 1);
     if (!status.ok()) {
       statuses.push_back(status);
@@ -466,12 +468,12 @@ absl::Status ValidatedGraphConfig::InitializeCalculatorInfo() {
                               statuses);
 }
 
-absl::Status ValidatedGraphConfig::InitializeGeneratorInfo() {
-  std::vector<absl::Status> statuses;
+mediapipe::Status ValidatedGraphConfig::InitializeGeneratorInfo() {
+  std::vector<mediapipe::Status> statuses;
   generators_.reserve(config_.packet_generator_size());
   for (const auto& node : config_.packet_generator()) {
     generators_.emplace_back();
-    absl::Status status =
+    mediapipe::Status status =
         generators_.back().Initialize(*this, node, generators_.size() - 1);
     if (!status.ok()) {
       statuses.push_back(status);
@@ -481,12 +483,12 @@ absl::Status ValidatedGraphConfig::InitializeGeneratorInfo() {
                               statuses);
 }
 
-absl::Status ValidatedGraphConfig::InitializeStatusHandlerInfo() {
-  std::vector<absl::Status> statuses;
+mediapipe::Status ValidatedGraphConfig::InitializeStatusHandlerInfo() {
+  std::vector<mediapipe::Status> statuses;
   status_handlers_.reserve(config_.status_handler_size());
   for (const auto& node : config_.status_handler()) {
     status_handlers_.emplace_back();
-    absl::Status status = status_handlers_.back().Initialize(
+    mediapipe::Status status = status_handlers_.back().Initialize(
         *this, node, status_handlers_.size() - 1);
     if (!status.ok()) {
       statuses.push_back(status);
@@ -496,7 +498,7 @@ absl::Status ValidatedGraphConfig::InitializeStatusHandlerInfo() {
                               statuses);
 }
 
-absl::Status ValidatedGraphConfig::InitializeSidePacketInfo(
+mediapipe::Status ValidatedGraphConfig::InitializeSidePacketInfo(
     bool* need_sorting_ptr) {
   for (NodeTypeInfo* node_type_info : sorted_nodes_) {
     MP_RETURN_IF_ERROR(AddInputSidePacketsForNode(node_type_info));
@@ -504,7 +506,7 @@ absl::Status ValidatedGraphConfig::InitializeSidePacketInfo(
         AddOutputSidePacketsForNode(node_type_info, need_sorting_ptr));
   }
   if (need_sorting_ptr && *need_sorting_ptr) {
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
   for (int index = 0; index < config_.status_handler_size(); ++index) {
     NodeTypeInfo* node_type_info = &status_handlers_[index];
@@ -513,10 +515,10 @@ absl::Status ValidatedGraphConfig::InitializeSidePacketInfo(
     RET_CHECK_EQ(node_type_info->Node().index, index);
     MP_RETURN_IF_ERROR(AddInputSidePacketsForNode(node_type_info));
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status ValidatedGraphConfig::AddInputSidePacketsForNode(
+mediapipe::Status ValidatedGraphConfig::AddInputSidePacketsForNode(
     NodeTypeInfo* node_type_info) {
   node_type_info->SetInputSidePacketBaseIndex(input_side_packets_.size());
   const tool::TagMap& tag_map =
@@ -539,10 +541,10 @@ absl::Status ValidatedGraphConfig::AddInputSidePacketsForNode(
     edge_info.name = name;
     edge_info.packet_type = &node_type_info->InputSidePacketTypes().Get(id);
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status ValidatedGraphConfig::AddOutputSidePacketsForNode(
+mediapipe::Status ValidatedGraphConfig::AddOutputSidePacketsForNode(
     NodeTypeInfo* node_type_info, bool* need_sorting_ptr) {
   node_type_info->SetOutputSidePacketBaseIndex(output_side_packets_.size());
   const tool::TagMap& tag_map =
@@ -573,10 +575,10 @@ absl::Status ValidatedGraphConfig::AddOutputSidePacketsForNode(
       }
     }
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status ValidatedGraphConfig::InitializeStreamInfo(
+mediapipe::Status ValidatedGraphConfig::InitializeStreamInfo(
     bool* need_sorting_ptr) {
   // Define output streams for graph input streams.
   ASSIGN_OR_RETURN(std::shared_ptr<tool::TagMap> graph_input_streams,
@@ -605,10 +607,10 @@ absl::Status ValidatedGraphConfig::InitializeStreamInfo(
 
   // Validate tag-name-indexes for graph output streams.
   MP_RETURN_IF_ERROR(tool::TagMap::Create(config_.output_stream()).status());
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status ValidatedGraphConfig::AddOutputStreamsForNode(
+mediapipe::Status ValidatedGraphConfig::AddOutputStreamsForNode(
     NodeTypeInfo* node_type_info) {
   // Define output streams connecting calculators.
   node_type_info->SetOutputStreamBaseIndex(output_streams_.size());
@@ -618,12 +620,12 @@ absl::Status ValidatedGraphConfig::AddOutputStreamsForNode(
         AddOutputStream(node_type_info->Node(), tag_map.Names()[id.value()],
                         &node_type_info->OutputStreamTypes().Get(id)));
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status ValidatedGraphConfig::AddOutputStream(NodeTypeInfo::NodeRef node,
-                                                   const std::string& name,
-                                                   PacketType* packet_type) {
+mediapipe::Status ValidatedGraphConfig::AddOutputStream(
+    NodeTypeInfo::NodeRef node, const std::string& name,
+    PacketType* packet_type) {
   output_streams_.emplace_back();
   auto& edge_info = output_streams_.back();
 
@@ -636,10 +638,10 @@ absl::Status ValidatedGraphConfig::AddOutputStream(NodeTypeInfo::NodeRef node,
     return mediapipe::UnknownErrorBuilder(MEDIAPIPE_LOC)
            << "Output Stream \"" << name << "\" defined twice.";
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status ValidatedGraphConfig::AddInputStreamsForNode(
+mediapipe::Status ValidatedGraphConfig::AddInputStreamsForNode(
     NodeTypeInfo* node_type_info, bool* need_sorting_ptr) {
   node_type_info->SetInputStreamBaseIndex(input_streams_.size());
   const int node_index = node_type_info->Node().index;
@@ -702,7 +704,7 @@ absl::Status ValidatedGraphConfig::AddInputStreamsForNode(
     edge_info.name = name;
     edge_info.packet_type = &node_type_info->InputStreamTypes().Get(id);
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 int ValidatedGraphConfig::SorterIndexForNode(NodeTypeInfo::NodeRef node) const {
@@ -726,7 +728,7 @@ NodeTypeInfo::NodeRef ValidatedGraphConfig::NodeForSorterIndex(
   }
 }
 
-absl::Status ValidatedGraphConfig::TopologicalSortNodes() {
+mediapipe::Status ValidatedGraphConfig::TopologicalSortNodes() {
 #if !(defined(MEDIAPIPE_LITE) || defined(MEDIAPIPE_MOBILE))
   VLOG(2) << "BEFORE TOPOLOGICAL SORT:\n" << config_.DebugString();
 #endif  // !(MEDIAPIPE_LITE || MEDIAPIPE_MOBILE)
@@ -834,10 +836,10 @@ absl::Status ValidatedGraphConfig::TopologicalSortNodes() {
 #if !(defined(MEDIAPIPE_LITE) || defined(MEDIAPIPE_MOBILE))
   VLOG(2) << "AFTER TOPOLOGICAL SORT:\n" << config_.DebugString();
 #endif  // !(MEDIAPIPE_LITE || MEDIAPIPE_MOBILE)
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status ValidatedGraphConfig::FillUpstreamFieldForBackEdges() {
+mediapipe::Status ValidatedGraphConfig::FillUpstreamFieldForBackEdges() {
   for (int index = 0; index < input_streams_.size(); ++index) {
     auto& input_stream = input_streams_[index];
     if (input_stream.back_edge) {
@@ -852,10 +854,10 @@ absl::Status ValidatedGraphConfig::FillUpstreamFieldForBackEdges() {
       input_stream.upstream = iter->second;
     }
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status ValidatedGraphConfig::ValidateSidePacketTypes() {
+mediapipe::Status ValidatedGraphConfig::ValidateSidePacketTypes() {
   for (const auto& side_packet : input_side_packets_) {
     // TODO Add a check to ensure multiple input side packets
     // connected to a side packet that will be provided later all have
@@ -863,7 +865,7 @@ absl::Status ValidatedGraphConfig::ValidateSidePacketTypes() {
     if (side_packet.upstream != -1 &&
         !side_packet.packet_type->IsConsistentWith(
             *output_side_packets_[side_packet.upstream].packet_type)) {
-      return absl::UnknownError(absl::Substitute(
+      return mediapipe::UnknownError(absl::Substitute(
           "Input side packet \"$0\" of $1 \"$2\" expected a packet of type "
           "\"$3\" but the connected output side packet will be of type \"$4\"",
           side_packet.name,
@@ -875,10 +877,10 @@ absl::Status ValidatedGraphConfig::ValidateSidePacketTypes() {
               .packet_type->DebugTypeName()));
     }
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status ValidatedGraphConfig::ResolveAnyTypes(
+mediapipe::Status ValidatedGraphConfig::ResolveAnyTypes(
     std::vector<EdgeInfo>* input_edges, std::vector<EdgeInfo>* output_edges) {
   for (EdgeInfo& input_edge : *input_edges) {
     if (input_edge.upstream == -1) {
@@ -893,15 +895,15 @@ absl::Status ValidatedGraphConfig::ResolveAnyTypes(
       output_root->SetSameAs(input_edge.packet_type);
     }
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status ValidatedGraphConfig::ValidateStreamTypes() {
+mediapipe::Status ValidatedGraphConfig::ValidateStreamTypes() {
   for (const EdgeInfo& stream : input_streams_) {
     RET_CHECK_NE(stream.upstream, -1);
     if (!stream.packet_type->IsConsistentWith(
             *output_streams_[stream.upstream].packet_type)) {
-      return absl::UnknownError(absl::Substitute(
+      return mediapipe::UnknownError(absl::Substitute(
           "Input stream \"$0\" of calculator \"$1\" expects packets of type "
           "\"$2\" but the connected output stream will contain packets of type "
           "\"$3\"",
@@ -911,10 +913,10 @@ absl::Status ValidatedGraphConfig::ValidateStreamTypes() {
           output_streams_[stream.upstream].packet_type->DebugTypeName()));
     }
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status ValidatedGraphConfig::ValidateExecutors() {
+mediapipe::Status ValidatedGraphConfig::ValidateExecutors() {
   absl::flat_hash_set<ProtoString> declared_names;
   for (const ExecutorConfig& executor_config : config_.executor()) {
     if (IsReservedExecutorName(executor_config.name())) {
@@ -924,7 +926,7 @@ absl::Status ValidatedGraphConfig::ValidateExecutors() {
     }
     if (!declared_names.emplace(executor_config.name()).second) {
       if (executor_config.name().empty()) {
-        return absl::InvalidArgumentError(
+        return mediapipe::InvalidArgumentError(
             "ExecutorConfig for the default executor is duplicate.");
       } else {
         return mediapipe::InvalidArgumentErrorBuilder(MEDIAPIPE_LOC)
@@ -951,7 +953,7 @@ absl::Status ValidatedGraphConfig::ValidateExecutors() {
              << "\" is not declared in an ExecutorConfig.";
     }
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 // static
@@ -959,27 +961,19 @@ bool ValidatedGraphConfig::IsReservedExecutorName(const std::string& name) {
   return name == "default" || name == "gpu" || absl::StartsWith(name, "__");
 }
 
-absl::Status ValidatedGraphConfig::ValidateRequiredSidePackets(
+mediapipe::Status ValidatedGraphConfig::ValidateRequiredSidePackets(
     const std::map<std::string, Packet>& side_packets) const {
-  std::vector<absl::Status> statuses;
+  std::vector<mediapipe::Status> statuses;
   for (const auto& required_item : required_side_packets_) {
     auto iter = side_packets.find(required_item.first);
     if (iter == side_packets.end()) {
-      bool is_optional = true;
-      for (int index : required_item.second) {
-        is_optional &= input_side_packets_[index].packet_type->IsOptional();
-      }
-      if (is_optional) {
-        // Side packets that are optional and not provided are ignored.
-        continue;
-      }
       statuses.push_back(mediapipe::InvalidArgumentErrorBuilder(MEDIAPIPE_LOC)
                          << "Side packet \"" << required_item.first
                          << "\" is required but was not provided.");
       continue;
     }
     for (int index : required_item.second) {
-      absl::Status status =
+      mediapipe::Status status =
           input_side_packets_[index].packet_type->Validate(iter->second);
       if (!status.ok()) {
         statuses.push_back(
@@ -994,12 +988,12 @@ absl::Status ValidatedGraphConfig::ValidateRequiredSidePackets(
     return tool::CombinedStatus(
         "ValidateRequiredSidePackets failed to validate: ", statuses);
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status ValidatedGraphConfig::ValidateRequiredSidePacketTypes(
+mediapipe::Status ValidatedGraphConfig::ValidateRequiredSidePacketTypes(
     const std::map<std::string, PacketType>& side_packet_types) const {
-  std::vector<absl::Status> statuses;
+  std::vector<mediapipe::Status> statuses;
   for (const auto& required_item : required_side_packets_) {
     auto iter = side_packet_types.find(required_item.first);
     if (iter == side_packet_types.end()) {
@@ -1021,10 +1015,10 @@ absl::Status ValidatedGraphConfig::ValidateRequiredSidePacketTypes(
     return tool::CombinedStatus(
         "ValidateRequiredSidePackets failed to validate: ", statuses);
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status ValidatedGraphConfig::ComputeSourceDependence() {
+mediapipe::Status ValidatedGraphConfig::ComputeSourceDependence() {
   for (int node_index = 0; node_index < calculators_.size(); ++node_index) {
     NodeTypeInfo& node_type_info = calculators_[node_index];
     if (node_type_info.InputStreamTypes().NumEntries() == 0) {
@@ -1065,11 +1059,11 @@ absl::Status ValidatedGraphConfig::ComputeSourceDependence() {
       }
     }
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::StatusOr<std::string> ValidatedGraphConfig::RegisteredSidePacketTypeName(
-    const std::string& name) {
+mediapipe::StatusOr<std::string>
+ValidatedGraphConfig::RegisteredSidePacketTypeName(const std::string& name) {
   auto iter = side_packet_to_producer_.find(name);
   bool defined = false;
   if (iter != side_packet_to_producer_.end()) {
@@ -1107,7 +1101,7 @@ absl::StatusOr<std::string> ValidatedGraphConfig::RegisteredSidePacketTypeName(
             "determinable, or the type may be defined but not registered.";
 }
 
-absl::StatusOr<std::string> ValidatedGraphConfig::RegisteredStreamTypeName(
+mediapipe::StatusOr<std::string> ValidatedGraphConfig::RegisteredStreamTypeName(
     const std::string& name) {
   auto iter = stream_to_producer_.find(name);
   if (iter == stream_to_producer_.end()) {

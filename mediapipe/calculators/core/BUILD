@@ -249,8 +249,6 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":concatenate_vector_calculator_cc_proto",
-        "//mediapipe/framework/api2:node",
-        "//mediapipe/framework/api2:port",
         "//mediapipe/framework/formats:classification_cc_proto",
         "//mediapipe/framework/formats:landmark_cc_proto",
         "//mediapipe/framework/formats:tensor",
@@ -556,7 +554,6 @@ cc_library(
     ],
     deps = [
         "//mediapipe/framework:calculator_framework",
-        "//mediapipe/framework/api2:node",
         "//mediapipe/framework/port:ret_check",
     ],
     alwayslink = 1,

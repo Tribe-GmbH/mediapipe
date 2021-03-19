@@ -71,12 +71,12 @@ float CalculateScale(float min_scale, float max_scale, int stride_index,
 // }
 class SsdAnchorsCalculator : public CalculatorBase {
  public:
-  static absl::Status GetContract(CalculatorContract* cc) {
+  static mediapipe::Status GetContract(CalculatorContract* cc) {
     cc->OutputSidePackets().Index(0).Set<std::vector<Anchor>>();
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Open(CalculatorContext* cc) override {
+  mediapipe::Status Open(CalculatorContext* cc) override {
     cc->SetOffset(TimestampDiff(0));
 
     const SsdAnchorsCalculatorOptions& options =
@@ -85,24 +85,24 @@ class SsdAnchorsCalculator : public CalculatorBase {
     auto anchors = absl::make_unique<std::vector<Anchor>>();
     MP_RETURN_IF_ERROR(GenerateAnchors(anchors.get(), options));
     cc->OutputSidePackets().Index(0).Set(Adopt(anchors.release()));
-    return absl::OkStatus();
+    return mediapipe::OkStatus();
   }
 
-  absl::Status Process(CalculatorContext* cc) override {
-    return absl::OkStatus();
+  mediapipe::Status Process(CalculatorContext* cc) override {
+    return mediapipe::OkStatus();
   }
 
  private:
-  static absl::Status GenerateAnchors(
+  static mediapipe::Status GenerateAnchors(
       std::vector<Anchor>* anchors, const SsdAnchorsCalculatorOptions& options);
 };
 REGISTER_CALCULATOR(SsdAnchorsCalculator);
 
-absl::Status SsdAnchorsCalculator::GenerateAnchors(
+mediapipe::Status SsdAnchorsCalculator::GenerateAnchors(
     std::vector<Anchor>* anchors, const SsdAnchorsCalculatorOptions& options) {
   // Verify the options.
   if (!options.feature_map_height_size() && !options.strides_size()) {
-    return absl::InvalidArgumentError(
+    return mediapipe::InvalidArgumentError(
         "Both feature map shape and strides are missing. Must provide either "
         "one.");
   }
@@ -206,7 +206,7 @@ absl::Status SsdAnchorsCalculator::GenerateAnchors(
     }
     layer_id = last_same_stride_layer;
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
 }  // namespace mediapipe

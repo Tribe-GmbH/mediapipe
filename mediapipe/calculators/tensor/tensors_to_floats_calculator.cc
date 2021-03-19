@@ -53,27 +53,28 @@ class TensorsToFloatsCalculator : public Node {
   MEDIAPIPE_NODE_INTERFACE(TensorsToFloatsCalculator, kInTensors, kOutFloat,
                            kOutFloats);
 
-  static absl::Status UpdateContract(CalculatorContract* cc);
-  absl::Status Open(CalculatorContext* cc) final;
-  absl::Status Process(CalculatorContext* cc) final;
+  static mediapipe::Status UpdateContract(CalculatorContract* cc);
+  mediapipe::Status Open(CalculatorContext* cc) final;
+  mediapipe::Status Process(CalculatorContext* cc) final;
 
  private:
   ::mediapipe::TensorsToFloatsCalculatorOptions options_;
 };
 MEDIAPIPE_REGISTER_NODE(TensorsToFloatsCalculator);
 
-absl::Status TensorsToFloatsCalculator::UpdateContract(CalculatorContract* cc) {
+mediapipe::Status TensorsToFloatsCalculator::UpdateContract(
+    CalculatorContract* cc) {
   // Only exactly a single output allowed.
   RET_CHECK(kOutFloat(cc).IsConnected() ^ kOutFloats(cc).IsConnected());
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TensorsToFloatsCalculator::Open(CalculatorContext* cc) {
+mediapipe::Status TensorsToFloatsCalculator::Open(CalculatorContext* cc) {
   options_ = cc->Options<::mediapipe::TensorsToFloatsCalculatorOptions>();
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 
-absl::Status TensorsToFloatsCalculator::Process(CalculatorContext* cc) {
+mediapipe::Status TensorsToFloatsCalculator::Process(CalculatorContext* cc) {
   const auto& input_tensors = *kInTensors(cc);
   RET_CHECK(!input_tensors.empty());
   // TODO: Add option to specify which tensor to take from.
@@ -100,7 +101,7 @@ absl::Status TensorsToFloatsCalculator::Process(CalculatorContext* cc) {
   } else {
     kOutFloats(cc).Send(std::move(output_floats));
   }
-  return absl::OkStatus();
+  return mediapipe::OkStatus();
 }
 }  // namespace api2
 }  // namespace mediapipe

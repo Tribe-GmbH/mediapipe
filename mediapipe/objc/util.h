@@ -72,22 +72,22 @@ void ReleaseMediaPipePacket(void* refcon, const void* base_address);
 /// necessary to convert the data. This is done by creating a new buffer.
 /// If the optional can_overwrite parameter is true, the old buffer may be
 /// modified instead.
-absl::Status CreateCVPixelBufferForImageFramePacket(
+::mediapipe::Status CreateCVPixelBufferForImageFramePacket(
     const mediapipe::Packet& image_frame_packet,
     CFHolder<CVPixelBufferRef>* out_buffer);
-absl::Status CreateCVPixelBufferForImageFramePacket(
+::mediapipe::Status CreateCVPixelBufferForImageFramePacket(
     const mediapipe::Packet& image_frame_packet, bool can_overwrite,
     CFHolder<CVPixelBufferRef>* out_buffer);
 
 /// Creates a CVPixelBuffer with a copy of the contents of the CGImage.
-absl::Status CreateCVPixelBufferFromCGImage(
+::mediapipe::Status CreateCVPixelBufferFromCGImage(
     CGImageRef image, CFHolder<CVPixelBufferRef>* out_buffer);
 
 /// Creates a CGImage with a copy of the contents of the CVPixelBuffer.
-absl::Status CreateCGImageFromCVPixelBuffer(CVPixelBufferRef image_buffer,
-                                            CFHolder<CGImageRef>* image);
+::mediapipe::Status CreateCGImageFromCVPixelBuffer(
+    CVPixelBufferRef image_buffer, CFHolder<CGImageRef>* image);
 
-/// DEPRECATED: use the version that returns absl::Status instead.
+/// DEPRECATED: use the version that returns ::mediapipe::Status instead.
 CVPixelBufferRef CreateCVPixelBufferForImageFramePacket(
     const mediapipe::Packet& image_frame_packet);
 
