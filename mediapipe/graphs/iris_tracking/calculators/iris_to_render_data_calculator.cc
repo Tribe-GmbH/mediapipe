@@ -188,12 +188,6 @@ mediapipe::Status IrisToRenderDataCalculator::Process(CalculatorContext* cc) {
              render_data.get());
 
   cc->Outputs()
-          .Tag(kLeftIris3DTag)
-          .AddPacket(render_data.release(), cc->InputTimestamp());
-  cc->Outputs()
-          .Tag(kRightIris3DTag)
-          .AddPacket(render_data.release(), cc->InputTimestamp());
-  cc->Outputs()
       .Tag(kRenderDataTag)
       .Add(render_data.release(), cc->InputTimestamp());
   return mediapipe::OkStatus();
