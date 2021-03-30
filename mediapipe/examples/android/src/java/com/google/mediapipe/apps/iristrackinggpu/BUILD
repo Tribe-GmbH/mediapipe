@@ -32,6 +32,24 @@ cc_library(
     alwayslink = 1,
 )
 
+cc_binary(
+    name = "iris_depth_from_image_desktop",
+    srcs = ["iris_depth_from_image_desktop.java"],
+    deps = [
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework/formats:image_frame",
+        "//mediapipe/framework/formats:image_frame_opencv",
+        "//mediapipe/framework/port:commandlineflags",
+        "//mediapipe/framework/port:file_helpers",
+        "//mediapipe/framework/port:opencv_highgui",
+        "//mediapipe/framework/port:opencv_imgproc",
+        "//mediapipe/framework/port:opencv_video",
+        "//mediapipe/framework/port:parse_text_proto",
+        "//mediapipe/framework/port:status",
+        "//mediapipe/graphs/iris_tracking:iris_depth_cpu_deps",
+    ],
+)
+
 android_binary(
     name = "iristrackinggpu",
     srcs = glob(["*.java"]),
