@@ -78,6 +78,18 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "iris_tracking_gpu_image",
+    deps = [
+        "//mediapipe/calculators/core:constant_side_packet_calculator",
+        "//mediapipe/calculators/core:flow_limiter_calculator",
+        "//mediapipe/calculators/core:split_vector_calculator",
+        "//mediapipe/graphs/iris_tracking/calculators:update_face_landmarks_calculator",
+        "//mediapipe/modules/face_landmark:face_landmark_front_gpu",
+        "//mediapipe/modules/iris_landmark:iris_landmark_left_and_right_gpu",
+    ],
+)
+
 mediapipe_binary_graph(
     name = "iris_tracking_gpu_binary_graph",
     graph = "iris_tracking_gpu.pbtxt",
