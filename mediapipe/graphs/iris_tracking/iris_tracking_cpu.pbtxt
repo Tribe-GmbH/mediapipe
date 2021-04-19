@@ -3,13 +3,19 @@
 # Used in the example in
 # mediapipie/examples/desktop/iris_tracking:iris_tracking_cpu.
 
+ 
+
 # CPU image. (ImageFrame)
 input_stream: "input_video"
 
+ 
+
 # CPU image. (ImageFrame)
-output_stream: "output_video"
+output_stream: "output_video_cpu"
 # Face landmarks with iris. (NormalizedLandmarkList)
 output_stream: "face_landmarks_with_iris"
+
+ 
 
 # Defines how many faces to detect. Iris tracking currently only handles one
 # face (left and right eye), and therefore this should always be set to 1.
@@ -23,6 +29,8 @@ node {
   }
 }
 
+ 
+
 # Detects faces and corresponding landmarks.
 node {
   calculator: "FaceLandmarkFrontCpu"
@@ -33,6 +41,8 @@ node {
   output_stream: "DETECTIONS:face_detections"
   output_stream: "ROIS_FROM_DETECTIONS:face_rects_from_detections"
 }
+
+ 
 
 # Gets the very first and only face from "multi_face_landmarks" vector.
 node {
@@ -46,6 +56,8 @@ node {
     }
   }
 }
+
+ 
 
 # Gets the very first and only face rect from "face_rects_from_landmarks"
 # vector.
@@ -61,6 +73,8 @@ node {
   }
 }
 
+ 
+
 # Gets two landmarks which define left eye boundary.
 node {
   calculator: "SplitNormalizedLandmarkListCalculator"
@@ -74,6 +88,8 @@ node {
     }
   }
 }
+
+ 
 
 # Gets two landmarks which define right eye boundary.
 node {
@@ -89,6 +105,8 @@ node {
   }
 }
 
+ 
+
 # Detects iris landmarks, eye contour landmarks, and corresponding rect (ROI).
 node {
   calculator: "IrisLandmarkLeftAndRightCpu"
@@ -103,6 +121,8 @@ node {
   output_stream: "RIGHT_EYE_ROI:right_eye_rect_from_landmarks"
 }
 
+ 
+
 node {
   calculator: "ConcatenateNormalizedLandmarkListCalculator"
   input_stream: "left_eye_contour_landmarks"
@@ -110,12 +130,16 @@ node {
   output_stream: "refined_eye_landmarks"
 }
 
+ 
+
 node {
   calculator: "UpdateFaceLandmarksCalculator"
   input_stream: "NEW_EYE_LANDMARKS:refined_eye_landmarks"
   input_stream: "FACE_LANDMARKS:face_landmarks"
   output_stream: "UPDATED_FACE_LANDMARKS:updated_face_landmarks"
 }
+
+ 
 
 # Renders annotations and overlays them on top of the input images.
 node {
@@ -131,8 +155,10 @@ node {
   input_stream: "RIGHT_EYE_RECT:right_eye_rect_from_landmarks"
   input_stream: "DETECTIONS:face_detections"
   output_stream: "IRIS_LANDMARKS:iris_landmarks"
-  output_stream: "IMAGE:output_video"
+  output_stream: "IMAGE:output_video_cpu"
 }
+
+ 
 
 node {
   calculator: "ConcatenateNormalizedLandmarkListCalculator"
@@ -140,3 +166,13 @@ node {
   input_stream: "iris_landmarks"
   output_stream: "face_landmarks_with_iris"
 }
+
+ 
+
+# Transfers the annotated image from CPU back to GPU memory, to be sent out of
+# the graph.
+#node: {
+#  calculator: "ImageFrameToGpuBufferCalculator"
+#  input_stream: "output_video_cpu"
+#  output_stream: "output_video"
+#}
